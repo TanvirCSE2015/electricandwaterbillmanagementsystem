@@ -4,6 +4,7 @@ namespace App\Providers\Filament;
 
 use Filament\Http\Middleware\Authenticate;
 use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
+use Filament\Actions\Action;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
@@ -29,6 +30,15 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->login()
+            ->brandName('বিদ্যুৎ ও পানি বিল ম্যানেজমেন্ট সিস্টেম')
+            ->brandLogo(asset('images/logo.png'))
+            ->userMenuItems([
+                'account' => fn (): Action => Action::make('electriccity')
+                    ->label('বিদ্যুৎ বিল')
+                    ->icon('heroicon-o-sparkles')
+                    ->url('/electricity'),
+            ])
+            ->spa(hasPrefetching: true)
             ->colors([
                 'primary' => Color::Amber,
             ])
@@ -40,7 +50,6 @@ class AdminPanelProvider extends PanelProvider
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
             ->widgets([
                 AccountWidget::class,
-                FilamentInfoWidget::class,
             ])
             ->middleware([
                 EncryptCookies::class,
