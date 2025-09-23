@@ -4,6 +4,7 @@ return [
     'email' => 'ইমেইল',
     'password' => 'পাসওয়ার্ড',
     'panel_type' => 'প্যানেল নির্বাচন করুন',
+    'unit_price' => 'প্রতি ইউনিটের মূল্য',
     'demand_charge' => 'ডিমান্ড চার্জ',
     'system_loss' => 'সিস্টেম লস',
     'service_charge' => 'সার্ভিস চার্জ',

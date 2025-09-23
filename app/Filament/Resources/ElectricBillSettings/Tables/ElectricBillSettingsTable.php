@@ -14,25 +14,35 @@ class ElectricBillSettingsTable
     {
         return $table
             ->columns([
+                TextColumn::make('unit_price')
+                    ->label(__('fields.unit_price'))
+                    ->numeric()
+                    ->suffix('  ৳/ইউনিট')
+                    ->sortable(),
                 TextColumn::make('system_loss')
                     ->label(__('fields.system_loss'))
                     ->numeric()
+                    ->suffix('  ইউনিট')
                     ->sortable(),
                 TextColumn::make('demand_charge')
                     ->label(__('fields.demand_charge'))
                     ->numeric()
+                    ->suffix('  ৳')
                     ->sortable(),
                 TextColumn::make('service_charge')
                     ->label(__('fields.service_charge'))
                     ->numeric()
+                    ->suffix('  ৳')
                     ->sortable(),
                 TextColumn::make('surcharge')
                     ->label(__('fields.surcharge'))
                     ->numeric()
+                    ->suffix('  %')
                     ->sortable(),
                 TextColumn::make('vat')
                     ->label(__('fields.vat'))
                     ->numeric()
+                    ->suffix('  %')
                     ->sortable(),
                 TextColumn::make('created_at')
                     ->label(__('fields.created_at'))
