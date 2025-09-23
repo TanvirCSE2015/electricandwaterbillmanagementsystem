@@ -46,4 +46,15 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+    public function canAccessPanel(\Filament\Panel $panel): bool
+    {
+         
+        return match ($this->panel_type) {
+            'super_admin' => in_array($panel->getId(), ['admin', 'electricity', 'water']),
+            'electricity' => $panel->getId() === 'electricity',
+            'water'       => $panel->getId() === 'water',
+            default       => false,
+        };
+    }
 }
