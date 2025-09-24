@@ -10,6 +10,12 @@ return [
     'service_charge' => 'সার্ভিস চার্জ',
     'surcharge' => 'সারচার্জ',
     'vat' => 'ভ্যাট',
+    'shop_no' => 'দোকান নং',
+    'phone' => 'ফোন',
+    'address' => 'ঠিকানা',
+    'meter_number' => 'মিটার নং',
+    'status' => 'স্ট্যাটাস',
+    'install_at' => 'ইনস্টলেশন তারিখ',
     'created_at' => 'তৈরির সময়',
     'updated_at' => 'আপডেটের সময়',
 ];
