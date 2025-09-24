@@ -29,6 +29,9 @@ class ElectricityPanelProvider extends PanelProvider
             ->id('electricity')
             ->path('electricity')
             ->login()
+            ->profile()
+            ->passwordReset()
+            ->favicon(asset('images/favicon.png'))
             ->brandName('বিদ্যুৎ বিল ম্যানেজমেন্ট সিস্টেম')
             ->brandLogo(asset('images/logo.png'))
             ->colors([

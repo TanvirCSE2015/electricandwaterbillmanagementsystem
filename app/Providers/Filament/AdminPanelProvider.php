@@ -30,13 +30,16 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->login()
+            ->profile()
+            ->favicon(asset('images/favicon.png'))
+            ->passwordReset()
             ->brandName('বিদ্যুৎ ও পানি বিল ম্যানেজমেন্ট সিস্টেম')
             ->brandLogo(asset('images/logo.png'))
             ->userMenuItems([
-                'account' => fn (): Action => Action::make('electriccity')
-                    ->label('বিদ্যুৎ বিল')
-                    ->icon('heroicon-o-sparkles')
-                    ->url('/electricity'),
+                'electricity' => Action::make('electricity')
+                    ->label('বিদ্যুৎ প্যানেল')
+                    ->url('/electricity')
+                    ->icon('heroicon-o-bolt'),
             ])
             ->spa(hasPrefetching: true)
             ->colors([
