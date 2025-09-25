@@ -4,8 +4,9 @@ namespace App\Filament\Electricity\Resources\Customers\Schemas;
 
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\RichEditor;
+use Filament\Forms\Components\RichEditor\TextColor;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
@@ -67,10 +68,14 @@ class CustomerForm
                                     ->default(null)
                                     ->placeholder('যদি থাকে')
                                     ->nullable(),
-                                TextInput::make('remarks')
-                                    ->label('মন্তব্য / Remarks')
+                                RichEditor::make('remarks')
+                                    ->label('মন্তব্য')
                                     ->placeholder('এখানে নোট লিখুন...')
-                                    ->columnSpanFull(),
+                                    ->fileAttachmentsDisk('public')
+                                    ->fileAttachmentsDirectory('images/e_remarks')
+                                    ->fileAttachmentsVisibility('public')
+                                    ->columnSpanFull()
+                                    ->formatStateUsing(fn (mixed $state): string => (string) $state),
                             ])
                             ->maxItems(function ($state) {
                                 return collect($state)->where('status', 'active')->count() > 0 ? 
