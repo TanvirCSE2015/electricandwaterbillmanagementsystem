@@ -16,6 +16,11 @@ return [
     'meter_number' => 'মিটার নং',
     'status' => 'স্ট্যাটাস',
     'install_at' => 'ইনস্টলেশন তারিখ',
+    'meter_id'  => 'মিটার',
+    'reading_date' => 'রিডিং তারিখ',
+    'previous_reading' => 'পূর্বের রিডিং',
+    'current_reading' => 'বর্তমান রিডিং',
+    'consume_unit' => 'ভোগকৃত ইউনিট',
     'created_at' => 'তৈরির সময়',
     'updated_at' => 'আপডেটের সময়',
 ];
