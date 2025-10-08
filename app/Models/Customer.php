@@ -22,4 +22,9 @@ class Customer extends Model
     {
         return $this->hasMany(ElectricBill::class);
     }
+
+    public function dueBills(): HasMany
+    {
+        return $this->hasMany(DueElectricBill::class);
+    }
 }

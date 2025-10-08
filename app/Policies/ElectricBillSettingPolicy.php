@@ -37,34 +37,4 @@ class ElectricBillSettingPolicy
         return $authUser->can('Delete:ElectricBillSetting');
     }
 
-    public function restore(AuthUser $authUser, ElectricBillSetting $electricBillSetting): bool
-    {
-        return $authUser->can('Restore:ElectricBillSetting');
-    }
-
-    public function forceDelete(AuthUser $authUser, ElectricBillSetting $electricBillSetting): bool
-    {
-        return $authUser->can('ForceDelete:ElectricBillSetting');
-    }
-
-    public function forceDeleteAny(AuthUser $authUser): bool
-    {
-        return $authUser->can('ForceDeleteAny:ElectricBillSetting');
-    }
-
-    public function restoreAny(AuthUser $authUser): bool
-    {
-        return $authUser->can('RestoreAny:ElectricBillSetting');
-    }
-
-    public function replicate(AuthUser $authUser, ElectricBillSetting $electricBillSetting): bool
-    {
-        return $authUser->can('Replicate:ElectricBillSetting');
-    }
-
-    public function reorder(AuthUser $authUser): bool
-    {
-        return $authUser->can('Reorder:ElectricBillSetting');
-    }
-
 }

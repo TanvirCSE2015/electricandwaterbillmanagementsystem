@@ -41,4 +41,10 @@ class Meter extends Model
     {
         return $this->hasMany(MeterReading::class);
     }
+
+    public function lastReading()
+    {
+        return $this->hasOne(MeterReading::class)->latestOfMany('reading_date');
+    }
+
 }

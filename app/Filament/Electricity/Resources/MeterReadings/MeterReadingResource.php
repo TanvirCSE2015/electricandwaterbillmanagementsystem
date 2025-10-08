@@ -20,6 +20,8 @@ class MeterReadingResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
+    protected static bool $shouldRegisterNavigation = false;
+
     public static function getModelLabel(): string
     {
         return 'বিল রিডিং';

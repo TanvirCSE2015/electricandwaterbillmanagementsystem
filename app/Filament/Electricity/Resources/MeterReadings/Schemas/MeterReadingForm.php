@@ -30,11 +30,32 @@ class MeterReadingForm
 
                 DatePicker::make('reading_date')
                 ->label(__('fields.reading_date'))
-                ->default(now())->required(),
+                ->default(now())->required()
+                ->rule(function ($get) {
+                    // Only run on create (no record yet)
+                    if ($get('id')) {
+                            return null;
+                        }
+                    $meterId = $get('meter_id');
+                    $readingDate = $get('reading_date');
+                    if (!$meterId || !$readingDate) {
+                        return null;
+                    }
+                    $month = \Carbon\Carbon::parse($readingDate)->format('Y-m');
+                    return function ($attribute, $value, $fail) use ($meterId, $month) {
+                        $exists = \App\Models\MeterReading::where('meter_id', $meterId)
+                            ->whereRaw("DATE_FORMAT(reading_date, '%Y-%m') = ?", [$month])
+                            ->exists();
+                        if ($exists) {
+                            $fail('এই মিটারের জন্য এই মাসের রিডিং ইতিমধ্যে বিদ্যমান।');
+                        }
+                    };
+                }),
 
                 TextInput::make('previous_reading')
                 ->label(__('fields.previous_reading'))
-                ->disabled(),
+                ->disabled()
+                ->dehydrated(true),
                 TextInput::make('current_reading')
                 ->label(__('fields.current_reading'))
                 ->required()
@@ -45,7 +66,8 @@ class MeterReadingForm
 
                 TextInput::make('consume_unit')
                 ->label(__('fields.consume_unit'))
-                ->disabled(),
+                ->disabled()
+                ->dehydrated(true),
             ]);
     }
 }

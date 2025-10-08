@@ -3,6 +3,7 @@
 namespace App\Providers\Filament;
 
 use App\Filament\Electricity\Resources\Customers\CustomerResource;
+use App\Filament\Electricity\Resources\ElectricBills\ElectricBillResource;
 use Filament\Http\Middleware\Authenticate;
 use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
 use Filament\Actions\Action;
@@ -74,6 +75,7 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->resources([
                 CustomerResource::class,
+                ElectricBillResource::class,
             ]);
     }
 }

@@ -18,6 +18,26 @@ class MeterReadingsTable
                 TextColumn::make('meter.customer.shop_no')
                     ->label(__('fields.shop_no'))
                     ->searchable(),
+                TextColumn::make('meter.meter_number')
+                    ->label(__('fields.meter_number'))
+                    ->searchable(),
+                TextColumn::make('reading_date')
+                    ->label(__('fields.reading_date'))
+                    ->date()
+                    ->sortable(),
+                TextColumn::make('previous_reading')
+                    ->label(__('fields.previous_reading'))
+                    ->numeric()
+                    ->sortable(),
+                TextColumn::make('current_reading')
+                    ->label(__('fields.current_reading'))
+                    ->numeric()
+                    ->sortable(),
+                TextColumn::make('consume_unit')
+                    ->label(__('fields.consume_unit'))
+                    ->numeric()
+                    ->sortable()
+                    ->suffix(' ইউনিট'),
             ])
             ->filters([
                 //
