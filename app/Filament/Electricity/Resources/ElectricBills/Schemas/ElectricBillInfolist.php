@@ -61,6 +61,9 @@ class ElectricBillInfolist
                 IconEntry::make('is_paid')
                     ->label(__('fields.is_paid') . 'ঃ')
                     ->boolean(),
+                TextEntry::make('due_date')
+                    ->label(__('fields.due_date') . 'ঃ')
+                    ->date(),
                 TextEntry::make('payment_date')
                     ->label(__('fields.payment_date') . 'ঃ')
                     ->date()

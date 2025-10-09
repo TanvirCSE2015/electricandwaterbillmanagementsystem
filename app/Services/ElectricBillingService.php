@@ -44,7 +44,7 @@ class ElectricBillingService
             'vat'                      => $vat,
             'total_amount'             => $totalAmount,
             'is_paid'                  => false,
-            'payment_date'             => Carbon::parse($reading->reading_date)->addDays(15),
+            'due_date'                 => Carbon::parse($reading->reading_date)->addDays(15),
             'created_by'               => $userId,
         ]);
     }
@@ -89,7 +89,7 @@ class ElectricBillingService
             'surcharge'                => $surcharge,
             'vat'                      => $vat,
             'total_amount'             => $totalAmount,
-            'payment_date'             => Carbon::parse($reading->reading_date)->addDays(15),
+            'due_date'             => Carbon::parse($reading->reading_date)->addDays(15),
         ]);
 
         return $bill;

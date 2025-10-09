@@ -30,6 +30,7 @@ return [
     'electric_bill_setting_id' => 'বিল সেটিংস',
     'total_amount' => 'মোট পরিমাণ',
     'is_paid' => 'পেমেন্ট স্ট্যাটাস',
+    'due_date' => 'বিলের শেষ তারিখ',
     'payment_date' => 'পেমেন্ট তারিখ',
     'payment_method' => 'পেমেন্ট পদ্ধতি',
     'transaction_id' => 'লেনদেন আইডি',

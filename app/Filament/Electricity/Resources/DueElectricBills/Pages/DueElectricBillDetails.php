@@ -3,7 +3,9 @@
 namespace App\Filament\Electricity\Resources\DueElectricBills\Pages;
 
 use App\Filament\Electricity\Resources\DueElectricBills\DueElectricBillResource;
+use App\Helpers\ElectricBillHelper;
 use App\Models\ElectricBill;
+use App\Models\ElectricBillSetting;
 use App\Models\Meter;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Select;
@@ -131,12 +133,20 @@ class DueElectricBillDetails extends Page implements HasForms, HasTable
                 ->formatStateUsing(fn ($state) => $this->en2bn($state)),
             TextColumn::make('surcharge')
                 ->label('সারচার্জ')
+                ->getStateUsing(function ($record) {
+                    return ElectricBillHelper::calculateSurcharge($record);
+                })
                 ->formatStateUsing(function ($state) {
+
                     return $state ? $this->en2bn($state) : $this->en2bn('0');
                 }),
             TextColumn::make('total_amount')
                 ->label('মোট বিল')
-                ->formatStateUsing(fn ($state) => $this->en2bn($state)),
+                ->getStateUsing(function ($record) {
+                    $surcharge = ElectricBillHelper::calculateSurcharge($record);
+                    return $record->total_amount + $surcharge;
+                })
+                ->formatStateUsing(fn ($state) => $this->en2bn(number_format($state, 2)))
         ];
     }
 
@@ -145,14 +155,24 @@ class DueElectricBillDetails extends Page implements HasForms, HasTable
         return false;
     }
 
+    
+
     protected function getHeaderActions(): array
     {
         return [
             Action::make('payment')
                 ->label('পরিশোধ করুন')
-                ->url(DueElectricBillResource::getUrl('index'))
                 ->icon('heroicon-o-banknotes')
-                ->color('primary'),
+                ->color('primary')
+                ->action(function () {
+                    $response = ElectricBillHelper::createInvoice(
+                        customerId: $this->record->id,
+                        count: $this->count ?? 1,
+                        userId: auth()->id()
+                    );
+
+                    // $this->notify($response['status'], $response['message']);
+                }),
         ];
     }
 
