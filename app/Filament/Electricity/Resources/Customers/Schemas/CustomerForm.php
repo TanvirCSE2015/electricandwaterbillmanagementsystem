@@ -68,6 +68,8 @@ class CustomerForm
                                     ->default(null)
                                     ->placeholder('যদি থাকে')
                                     ->nullable(),
+                                TextInput::make('current_reading')
+                                    ->label(__('fields.current_reading')),
                                 RichEditor::make('remarks')
                                     ->label('মন্তব্য')
                                     ->placeholder('এখানে নোট লিখুন...')
@@ -81,7 +83,7 @@ class CustomerForm
                                 return collect($state)->where('status', 'active')->count() > 0 ? 
                                 collect($state)->count() : collect($state)->count()+1;
                             })
-                            ->columns(4)
+                            ->columns(5)
                             
                     ])->columnSpanFull(),
             ])->columns(12);

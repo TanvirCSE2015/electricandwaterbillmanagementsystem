@@ -16,16 +16,16 @@ class MeterReading extends Model
 
     protected static function booted()
     {
-        static::creating(function ($reading) {
-            $lastReading = self::where('meter_id', $reading->meter_id)
-                ->latest('reading_date')
-                ->first();
-            $reading->previous_reading = $lastReading?->current_reading ?? 0;
-            if ($reading->current_reading !=0) {
-                $reading->consume_unit = $reading->current_reading - $reading->previous_reading;
-            }
+        // static::creating(function ($reading) {
+        //     // $lastReading = self::where('meter_id', $reading->meter_id)
+        //     //     ->latest('reading_date')
+        //     //     ->first();
+        //     // $reading->previous_reading = $lastReading?->current_reading ?? 0;
+        //     if ($reading->current_reading !=0) {
+        //         $reading->consume_unit = $reading->current_reading - $reading->previous_reading;
+        //     }
             
-        });
+        // });
 
         static::created(function ($reading) {
             $setting = ElectricBillSetting::latest()->first();

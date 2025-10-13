@@ -49,7 +49,14 @@ class ElectricBillInfolist
                 TextEntry::make('surcharge')
                     ->label(__('fields.surcharge') . 'ঃ')
                     ->numeric()
-                    ->suffix(' ৳'),
+                    ->suffix(' ৳')
+                    ->getStateUsing(function ($record) {
+                        if ($record->surcharge > 0) {
+                            return $record->surcharge;
+                        } else {
+                            return \App\Helpers\ElectricBillHelper::calculateSurcharge($record);
+                        }
+                    }),
                 TextEntry::make('vat')
                     ->label(__('fields.vat') . 'ঃ')
                     ->numeric()

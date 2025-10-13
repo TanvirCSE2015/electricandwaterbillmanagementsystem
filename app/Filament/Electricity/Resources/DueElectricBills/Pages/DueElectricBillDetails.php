@@ -16,6 +16,7 @@ use Filament\Resources\Pages\Concerns\InteractsWithRecord;
 use Filament\Resources\Pages\Page;
 use Filament\Schemas\Components\Grid;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Columns\TextInputColumn;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
 
@@ -131,20 +132,44 @@ class DueElectricBillDetails extends Page implements HasForms, HasTable
             TextColumn::make('consumed_units')
                 ->label('ব্যবহৃত ইউনিট')
                 ->formatStateUsing(fn ($state) => $this->en2bn($state)),
-            TextColumn::make('surcharge')
+            TextInputColumn::make('surcharge')
                 ->label('সারচার্জ')
                 ->getStateUsing(function ($record) {
                     return ElectricBillHelper::calculateSurcharge($record);
                 })
-                ->formatStateUsing(function ($state) {
+                ->beforeStateUpdated(function ($state, $record) {
+                    // $originalSurcharge = $record->getOriginal('surcharge');
+                    // if ($originalSurcharge != $state) {
+                    //     $difference = $state - $originalSurcharge;
+                    //     $record->total_amount += $difference;
+                    // }
+                    // $record->surcharge = $state;
+                    // $record->save();
+                    // $this->resetTable();
+                    $state = (float) $state;
+                    $old = $record->getOriginal('surcharge');
 
-                    return $state ? $this->en2bn($state) : $this->en2bn('0');
+                    // Get the base amount (total - old surcharge)
+                    $baseAmount = $record->total_amount - $old;
+
+                    // Recalculate total with the new surcharge
+                    $record->total_amount = $baseAmount + $state;
+
+                    $record->surcharge = $state;
+                    $record->save();
+                    $this->resetTable();
                 }),
             TextColumn::make('total_amount')
                 ->label('মোট বিল')
                 ->getStateUsing(function ($record) {
-                    $surcharge = ElectricBillHelper::calculateSurcharge($record);
-                    return $record->total_amount + $surcharge;
+                   
+                    if($record->surcharge == 0){
+                        $surcharge = ElectricBillHelper::calculateSurcharge($record);
+                        return $record->total_amount + $surcharge;
+                    }else{
+                        return $record->total_amount;
+                    }
+                    
                 })
                 ->formatStateUsing(fn ($state) => $this->en2bn(number_format($state, 2)))
         ];

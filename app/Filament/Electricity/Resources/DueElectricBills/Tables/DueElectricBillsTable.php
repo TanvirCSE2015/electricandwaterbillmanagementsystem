@@ -32,6 +32,24 @@ class DueElectricBillsTable
                     ->sortable(),  
                 TextColumn::make('bills_sum_total_amount')
                     ->label(__('fields.total_amount'))
+                    ->getStateUsing(function ($record) {
+                        $bills=$record->bills;
+                        $dueTotal=0;
+                        foreach ($bills as $bill) {
+                           if ($bill->is_paid) {
+                               continue;
+                            }else{
+                                if($bill->surcharge > 0){
+                                    $dueTotal += $bill->total_amount;
+                                    continue;
+                                }else{
+                                        $surcharge= \App\Helpers\ElectricBillHelper::calculateSurcharge($bill);
+                                        $dueTotal += $bill->total_amount + $surcharge;
+                                }
+                            }
+                        }
+                        return $dueTotal;
+                    })
                     ->numeric()
                     ->sortable(),
                 TextColumn::make('created_at')

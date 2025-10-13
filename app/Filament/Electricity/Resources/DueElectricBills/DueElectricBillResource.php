@@ -23,12 +23,12 @@ class DueElectricBillResource extends Resource
 
     public static function getModelLabel(): string
     {
-        return 'বকেয়া বিদ্যুৎ বিল';
+        return 'বকেয়া বিদ্যুৎ বিল পরিশোধ';
     }
 
     public static function getPluralModelLabel(): string
     {
-        return 'বকেয়া বিদ্যুৎ বিলসমূহ';
+        return 'বকেয়া বিদ্যুৎ বিলসমূহ পরিশোধ';
     }
 
     public static function form(Schema $schema): Schema

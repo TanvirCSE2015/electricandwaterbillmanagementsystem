@@ -119,14 +119,19 @@ class Billgenerate extends Page implements HasForms, HasTable
     {
         DB::transaction(function () {
             $activeMeters = Meter::where('status', 'active')->get();
+            $previousReading=0;
 
             foreach ($activeMeters as $meter) {
                 // Find last reading
                 $lastReading = MeterReading::where('meter_id', $meter->id)
                     ->latest('reading_date')
                     ->first();
-
-                $previousReading = $lastReading?->current_reading ?? 0;
+                // if(!$lastReading){
+                //     $previousReading=$meter->current_reading;
+                // }else{
+                //     $previousReading = $lastReading?->current_reading;
+                // }
+                $previousReading = $lastReading?->current_reading ?? $meter->current_reading;
                 $setting = ElectricBillSetting::query()->latest()->first();
                 // Create a new meter reading
                 $reading = MeterReading::create([

@@ -16,8 +16,11 @@ class ElectricBillHelper
 
         $settings=ElectricBillSetting::first();
 
+        if ($bill->surcharge > 0) {
+            return $bill->surcharge;
+        }
+
         if ($dueDate && $today->gt($dueDate)) {
-            
             $surcharge = round($bill->total_amount * ($settings->surcharge/100), 2);
             return $surcharge;
         }
@@ -44,8 +47,12 @@ class ElectricBillHelper
             $totalAmount = 0;
             $surcharge = 0;
             foreach ($bills as $bill) {
-                $surcharge = self::calculateSurcharge($bill);
-                $totalAmount += $bill->total_amount + $surcharge;
+                if($bill->surcharge > 0){
+                    $totalAmount =   $bill->total_amount;
+                }else{
+                    $surcharge = self::calculateSurcharge($bill);
+                    $totalAmount += $bill->total_amount + $surcharge;
+                }
             }
 
             // Determine invoice range and metadata
@@ -78,11 +85,12 @@ class ElectricBillHelper
                 'electric_invoice_id' => $invoice->id,
             ]);
 
-            return [
-                'status' => 'success',
-                'message' => 'ইনভয়েস সফলভাবে তৈরি হয়েছে!',
-                'invoice' => $invoice,
-            ];
+            // return [
+            //     'status' => 'success',
+            //     'message' => 'ইনভয়েস সফলভাবে তৈরি হয়েছে!',
+            //     'invoice' => $invoice,
+            // ];
+            return redirect()->route('electric-receipt.print',['id'=>$invoice->id]);
         });
     }
 }
