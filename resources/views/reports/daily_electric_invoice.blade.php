@@ -41,31 +41,59 @@ function en2bn($number): string
     <table class="table table-bordered table-striped" id="sales-table">
     <thead>
         <tr class="text-center" style="font-size: 14px">
-            <th>রশিদ নং</th>
-            <th>তারিখ</th>
-            <th>গ্রাহকের নাম</th>
-            <th>দোকান নং</th>
-            <th>বিলের মাস</th>
-            <th>মোট বিল</th>
+            @if ($type==='daily')
+                <th>রশিদ নং</th>
+                <th>তারিখ</th>
+                <th>গ্রাহকের নাম</th>
+                <th>দোকান নং</th>
+                <th>বিলের মাস</th>
+                <th>মোট বিল</th>
+            @elseif ($type==='monthly')
+                <th>তারিখ</th>
+                <th>মাস</th>
+                <th>বছর</th>
+                <th>মোট বিল</th>
+            @elseif ($type==='yearly')
+                <th>মাস</th>
+                <th>বছর</th>
+                <th>মোট বিল</th>
+            @endif
             
         </tr>
     </thead>
     <tbody>
         @forelse ($records as $record)
-            <tr class="text-center" style="font-size: 12px">
-                <td>{{ en2bn($record->invoice_number) }}</td>
-                <td>{{ en2bn($record->invoice_date)}}</td>
-                <td>{{ $record->customer->name }}</td>
-                <td>{{ $record->customer->shop_no }}</td>
-                <td>{{ en2bn( $record->to_month ? $record->from_month . ' থেকে ' . $record->to_month : $record->from_month) }}</td>
-                <td>{{ $numto->bnCommaLakh($record->total_amount) }}</td>
-                
-            </tr>
+            @if ($type==='daily')
+                <tr class="text-center" style="font-size: 12px">
+                    <td>{{ en2bn($record->invoice_number) }}</td>
+                    <td>{{ en2bn($record->invoice_date)}}</td>
+                    <td>{{ $record->customer->name }}</td>
+                    <td>{{ $record->customer->shop_no }}</td>
+                    <td>{{ en2bn( $record->to_month ? $record->from_month . ' থেকে ' . $record->to_month : $record->from_month) }}</td>
+                    <td>{{ $numto->bnCommaLakh($record->total_amount) }}</td>
+                    
+                </tr>
+            @elseif ($type==='monthly')
+                <tr class="text-center" style="font-size: 14px">
+                    <td>{{ en2bn($record->invoice_date)}}</td>
+                    <td>{{ en2bn($record->invoice_month_name) }}</td>
+                    <td>{{ en2bn($record->invoice_year) }}</td>
+                    <td>{{ $numto->bnCommaLakh($record->total_amount) }}</td>
+                </tr>
+            @elseif ($type==='yearly')
+                <tr class="text-center" style="font-size: 14px">
+                    <td>{{ en2bn($record->invoice_month_name) }}</td>
+                    <td>{{ en2bn($record->invoice_year) }}</td>
+                    <td>{{ $numto->bnCommaLakh($record->total_amount) }}</td>
+                </tr>
+            @endif
+            
         @empty
             <tr>
                 <td colspan="7">No records found.</td>
             </tr>
         @endforelse
+        @if ($type==='daily')
             <tr>
                 <td colspan="5" class="text-end">মোট আদায়</td>
                 <td>{{ $numto->bnCommaLakh($total) }}</td>
@@ -74,6 +102,25 @@ function en2bn($number): string
                 <td colspan="2" class="text-end">মোট আদায় কথায়</td> 
                 <td colspan="4" class="text-end">{{ $numto->bnMoney($total) . ' মাত্র'}}</td>
             </tr>
+         @elseif ($type==='monthly')
+            <tr class="text-center">
+                <td colspan="3" class="text-end">মোট আদায়</td>
+                <td class="text-center">{{ $numto->bnCommaLakh($total) }}</td>
+            </tr>
+             <tr>
+                <td colspan="1" class="text-end">মোট আদায় কথায়</td> 
+                <td colspan="3" class="text-end">{{ $numto->bnMoney($total) . ' মাত্র'}}</td>
+            </tr>
+        @elseif ($type==='yearly')
+            <tr>
+                <td colspan="2" class="text-end">মোট আদায়</td>
+                <td class="text-center">{{ $numto->bnCommaLakh($total) }}</td>
+            </tr>
+             <tr>
+                <td colspan="1" class="text-end">মোট আদায় কথায়</td> 
+                <td colspan="2" class="text-end">{{ $numto->bnMoney($total) . ' মাত্র'}}</td>
+            </tr>
+        @endif
          
     </table>
 @endsection

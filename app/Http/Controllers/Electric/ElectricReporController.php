@@ -21,10 +21,15 @@ class ElectricReporController extends Controller
                 $query->whereDate('invoice_date',$date);
             })
             ->when($month && $year , function($query) use($month,$year){
-                $query->where(['invoice_month' => $month, 'invoice_year' => $year]);
+                $query->where(['invoice_month' => $month, 'invoice_year' => $year])
+                ->selectRaw('ROW_NUMBER() OVER() as id,
+                    invoice_date, invoice_month,invoice_month_name, invoice_year, SUM(total_amount) as total_amount')
+                ->groupByRaw('invoice_date');
             })
             ->when($year , function($query) use($year){
-                $query->where(['invoice_year' => $year]);
+                $query->where(['invoice_year' => $year])
+                    ->selectRaw('ROW_NUMBER() OVER() as id, invoice_month, SUM(total_amount) as total_amount,
+                    invoice_month_name, invoice_year');
             })
             ->with('customer')
             ->get();

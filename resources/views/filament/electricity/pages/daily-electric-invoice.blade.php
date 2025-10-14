@@ -8,7 +8,7 @@ $numto = new NumberToBangla();
     {{ $this->form }}
     <div style="width:100%;display:flex;justify-content:flex-end;margin-top: -25px;">
         <span style="font-weight:bold;">
-            মোট আদায়: {{ $numto->bnCommaLakh($this->getTableQuery()->sum('total_amount')) }} /= 
+            মোট আদায়: {{ $this->getTotalAmount() }} 
         </span>
     </div>
     {{ $this->table }}

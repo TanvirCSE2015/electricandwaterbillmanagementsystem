@@ -10,9 +10,11 @@ use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Pages\Page;
 use Filament\Schemas\Components\Grid;
+use Filament\Tables\Columns\Summarizers\Sum;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
+use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Rakibhstu\Banglanumber\NumberToBangla;
@@ -83,6 +85,7 @@ class DailyElectricInvoice extends Page implements HasForms, HasTable
                             $set('month', null);
                             $set('year', now()->year);
                         }
+                        $this->resetTable();
                     }),
                     DatePicker::make('date')
                         ->label('তারিখ')
@@ -150,48 +153,103 @@ class DailyElectricInvoice extends Page implements HasForms, HasTable
 
     protected function getTableQuery(): Builder
     {
-        return \App\Models\ElectricInvoice::query()
-            ->when($this->date, function ($query) {
-                $query->whereDate('invoice_date', $this->date);
-            })
-            ->when($this->month && $this->year, function($query){
-                $query->where(['invoice_month' => $this->month, 'invoice_year' => $this->year]);
-            })
-            ->when($this->year , function($query){
-                $query->where(['invoice_year' => $this->year]);
-            });
+        // return \App\Models\ElectricInvoice::query()
+        //     ->when($this->date, function ($query) {
+        //         $query->whereDate('invoice_date', $this->date);
+        //     })
+        //     ->when($this->month && $this->year, function($query){
+        //         $query->where(['invoice_month' => $this->month, 'invoice_year' => $this->year]);
+        //     })
+        //     ->when($this->year , function($query){
+        //         $query->where(['invoice_year' => $this->year]);
+        //     });
+        $type=$this->form->getState()['type'];
+        $date=$this->form->getState()['date'] ?? null;
+        $month=$this->form->getState()['month'] ?? null;
+        $year=$this->form->getState()['year'] ?? null;
+        $query = \App\Models\ElectricInvoice::query();
+
+        if ($this->form->getState()['type'] === 'daily' && $date) {
+            $query->whereDate('invoice_date', $date);
+        }
+
+        if ($this->form->getState()['type'] === 'monthly' && $month && $year) {
+            return $query
+                ->where(['invoice_month'=> $month,'invoice_year'=>$year])
+                
+               ->selectRaw('ROW_NUMBER() OVER() as id,
+                    invoice_date,
+                    SUM(total_amount) as total_amount,
+                    invoice_month as month,
+                    invoice_month_name as month_name,
+                    invoice_year as year
+                ')
+                ->groupByRaw('invoice_date');
+        }
+
+        if ($this->form->getState()['type'] === 'yearly' && $year) {
+            return $query
+             ->selectRaw('
+                ROW_NUMBER() OVER() as id,
+                 invoice_month,
+                 invoice_year,
+                 invoice_month_name,
+                SUM(total_amount) as total_amount
+            ')
+            ->where('invoice_year', $year)
+            ->groupByRaw('invoice_month');
+        }
+
+        return $query;
         
     }
 
     protected function getTableColumns(): array
     {
-        return [
-            TextColumn::make('invoice_number')
-                ->label('রশিদ নং')
-                ->formatStateUsing(fn($state) => $this->en2bn($state))
-                ->searchable(),
-            TextColumn::make('invoice_date')
-                ->label('রশিদ তারিখ')
-                ->date()
-                ->formatStateUsing(fn($state) => $this->en2bn($state))
-                ->searchable(),
-            TextColumn::make('customer.name')->label('গ্রাহক নাম')->searchable(),
-            TextColumn::make('customer.shop_no')->label('দোকান নং')->searchable(),
-            TextColumn::make('Month')->label('বিলের মাস')
-            ->getStateUsing(function ($record){
-                if ($record->to_month){
-                    return $record->from_month . ' হতে '. $record->to_month;
-                }
-                return $record->from_month;
-            })
-            ->formatStateUsing(fn($state)=>$this->en2bn($state)),
-            
-             TextColumn::make('total_amount')->label('পরিশোধিত পরিমাণ')
-                ->formatStateUsing(function($state){
-                    $numto=$numto = new NumberToBangla();
-                    return $numto->bnCommaLakh($state);
-                })->searchable(),
+        
+
+         if ($this->form->getState()['type'] === 'daily') {
+            return [
+                TextColumn::make('invoice_number')->label('রশিদ নং')->formatStateUsing(fn($state) => $this->en2bn($state))->searchable(),
+                TextColumn::make('invoice_date')->label('রশিদ তারিখ')->date()->formatStateUsing(fn($state) => $this->en2bn($state))->searchable(),
+                TextColumn::make('customer.name')->label('গ্রাহক নাম')->searchable(),
+                TextColumn::make('customer.shop_no')->label('দোকান নং')->searchable(),
+                TextColumn::make('Month')->label('বিলের মাস')->getStateUsing(function ($record){
+                    if ($record->to_month){
+                        return $record->from_month . ' হতে '. $record->to_month;
+                    }
+                    return $record->from_month;
+                })->formatStateUsing(fn($state)=>$this->en2bn($state)),
+                TextColumn::make('total_amount')->label('পরিশোধিত পরিমাণ')
+                    ->formatStateUsing(fn($state) => (new NumberToBangla())->bnCommaLakh($state))
+                    ->searchable(),
+                // TextColumn::make('total_amount')
+                // ->label('পরিশোধিত পরিমাণ')
+                // ->summarize(Sum::make()->label('মোট পরিশোধিত')),
             ];
+        }
+
+        if ($this->form->getState()['type'] === 'monthly') {
+            return [
+                TextColumn::make('invoice_date')->label('তারিখ')->formatStateUsing(fn($state) => $this->en2bn($state)),
+                TextColumn::make('month_name')->label('মাস')->formatStateUsing(fn($state) => $this->en2bn($state)),
+                TextColumn::make('year')->label('বছর')->formatStateUsing(fn($state) => $this->en2bn($state)),
+                TextColumn::make('total_amount')->label('মোট আদায়')
+                    ->formatStateUsing(fn($state) => (new NumberToBangla())->bnCommaLakh($state)),
+            ];
+        }
+
+        if ($this->form->getState()['type'] === 'yearly') {
+            return [
+                TextColumn::make('invoice_month_name')->label('মাস')
+                    ->formatStateUsing(fn($state) => $this->en2bn($state)),
+                TextColumn::make('invoice_year')->label('বছর')->formatStateUsing(fn($state) => $this->en2bn($state)),
+                TextColumn::make('total_amount')->label('মোট আদায়')
+                    ->formatStateUsing(fn($state) => (new NumberToBangla())->bnCommaLakh($state)),
+            ];
+        }
+
+        return [];
     }
 
     protected function getTableActions(): array
@@ -204,6 +262,7 @@ class DailyElectricInvoice extends Page implements HasForms, HasTable
             ]))
             ->icon('heroicon-o-printer')
             ->openUrlInNewTab()
+            ->hidden(fn()=>$this->form->getState()['type']==='monthly' || $this->form->getState()['type']==='yearly')
         ];
     }
 
@@ -222,5 +281,32 @@ class DailyElectricInvoice extends Page implements HasForms, HasTable
             ->openUrlInNewTab()
         ];
     }
+
+    public function getTotalAmount(): string
+    {
+        $type = $this->form->getState()['type'] ?? 'daily';
+        $date = $this->form->getState()['date'] ?? null;
+        $month = $this->form->getState()['month'] ?? null;
+        $year = $this->form->getState()['year'] ?? null;
+
+        $query = \App\Models\ElectricInvoice::query();
+
+        if ($type === 'daily' && $date) {
+            $query->whereDate('invoice_date', $date);
+        }
+
+        if ($type === 'monthly' && $month && $year) {
+            $query->where(['invoice_month'=> $month, 'invoice_year'=> $year]);
+        }
+
+        if ($type === 'yearly' && $year) {
+            $query->where('invoice_year', $year);
+        }
+
+        $sum = $query->sum('total_amount');
+
+        return (new NumberToBangla())->bnCommaLakh($sum) . ' /=';
+    }
+
 
 }
