@@ -27,7 +27,7 @@ class Billgenerate extends Page implements HasForms, HasTable
     protected string $view = 'filament.electricity.pages.billgenerate';
 
     protected static ?string $navigationLabel = 'বিদ্যুৎ প্রস্তুতকরণ';
-    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-currency-dollar';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-pencil-square';
     
     public function getTitle(): string
     {

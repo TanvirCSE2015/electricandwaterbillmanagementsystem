@@ -23,6 +23,7 @@ class ElectricBillPage extends Page implements HasTable, HasForms
 
     protected static ?string $navigationLabel = 'বিদ্যুৎ বিলসমূহ কাস্টম পেজ';
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-currency-dollar';
+    protected static bool $shouldRegisterNavigation = false;
 
     public function en2bn($number): string
     {

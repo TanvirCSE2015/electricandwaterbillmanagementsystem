@@ -21,7 +21,7 @@ class ElectricBillResource extends Resource
 {
     protected static ?string $model = ElectricBill::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::PresentationChartLine;
 
     protected static bool $shouldRegisterNavigation = true;
 

@@ -17,15 +17,21 @@ use Filament\Tables\Contracts\HasTable;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\Relation;
+use pxlrbt\FilamentExcel\Actions\ExportAction;
+use pxlrbt\FilamentExcel\Exports\ExcelExport;
 use Rakibhstu\Banglanumber\NumberToBangla;
+use UnitEnum;
 
 class DailyElectricInvoice extends Page implements HasForms, HasTable
 {
     use InteractsWithForms, InteractsWithTable;
     protected string $view = 'filament.electricity.pages.daily-electric-invoice';
 
-    protected static ?string $navigationLabel = 'দৈনিক বকেয়া আদায়';
-    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-document-text';
+    protected static ?string $navigationLabel = 'বকেয়া আদাইয়ের রিপোর্ট';
+
+    protected static string | UnitEnum | null $navigationGroup = 'রিপোর্ট সমূহ';
+    
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-banknotes';
 
     public function en2bn($number): string
     {
@@ -51,7 +57,7 @@ class DailyElectricInvoice extends Page implements HasForms, HasTable
 
     public function getTitle(): string
     {
-        return 'দৈনিক বকেয়া আদায়';
+        return 'বকেয়া আদাইয়ের রিপোর্ট';
     }
 
     protected function getFormSchema(): array
@@ -222,6 +228,7 @@ class DailyElectricInvoice extends Page implements HasForms, HasTable
                 })->formatStateUsing(fn($state)=>$this->en2bn($state)),
                 TextColumn::make('total_amount')->label('পরিশোধিত পরিমাণ')
                     ->formatStateUsing(fn($state) => (new NumberToBangla())->bnCommaLakh($state))
+                    ->suffix(' ৳')
                     ->searchable(),
                 // TextColumn::make('total_amount')
                 // ->label('পরিশোধিত পরিমাণ')
@@ -231,11 +238,14 @@ class DailyElectricInvoice extends Page implements HasForms, HasTable
 
         if ($this->form->getState()['type'] === 'monthly') {
             return [
-                TextColumn::make('invoice_date')->label('তারিখ')->formatStateUsing(fn($state) => $this->en2bn($state)),
-                TextColumn::make('month_name')->label('মাস')->formatStateUsing(fn($state) => $this->en2bn($state)),
+                TextColumn::make('invoice_date')->label('তারিখ')->formatStateUsing(fn($state) => $this->en2bn($state))
+                    ->searchable(),
+                TextColumn::make('month_name')->label('মাস')->formatStateUsing(fn($state) => $this->en2bn($state))
+                    ->searchable(),
                 TextColumn::make('year')->label('বছর')->formatStateUsing(fn($state) => $this->en2bn($state)),
                 TextColumn::make('total_amount')->label('মোট আদায়')
-                    ->formatStateUsing(fn($state) => (new NumberToBangla())->bnCommaLakh($state)),
+                    ->formatStateUsing(fn($state) => (new NumberToBangla())->bnCommaLakh($state))->suffix(' ৳')
+                    ->searchable(),
             ];
         }
 
@@ -245,7 +255,8 @@ class DailyElectricInvoice extends Page implements HasForms, HasTable
                     ->formatStateUsing(fn($state) => $this->en2bn($state)),
                 TextColumn::make('invoice_year')->label('বছর')->formatStateUsing(fn($state) => $this->en2bn($state)),
                 TextColumn::make('total_amount')->label('মোট আদায়')
-                    ->formatStateUsing(fn($state) => (new NumberToBangla())->bnCommaLakh($state)),
+                    ->formatStateUsing(fn($state) => (new NumberToBangla())->bnCommaLakh($state))->suffix(' ৳')
+                    ->searchable(),
             ];
         }
 
@@ -269,6 +280,16 @@ class DailyElectricInvoice extends Page implements HasForms, HasTable
     protected function getTableHeaderActions(): array
     {
         return [
+            ExportAction::make('Export')
+                ->label('এক্সেলে ডাউনলোড')
+                ->color('success')
+                ->exports([
+                    ExcelExport::make()
+                        ->fromTable()
+                        ->withFilename('বিদ্যুৎ বিল রিপোর্ট-' . now()->format('Y-m-d'))
+                        ->withWriterType(\Maatwebsite\Excel\Excel::XLSX),          
+                ]),
+
             Action::make('printReport')
             ->label('প্রিন্ট রিপোর্ট')
             ->icon('heroicon-o-printer')
@@ -278,7 +299,9 @@ class DailyElectricInvoice extends Page implements HasForms, HasTable
                 'month' => $this->form->getState()['month'] ?? null,
                 'year' => $this->form->getState()['year'] ?? null,
             ]))
-            ->openUrlInNewTab()
+            ->openUrlInNewTab(),
+
+            
         ];
     }
 

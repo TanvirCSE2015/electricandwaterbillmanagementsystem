@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Electric;
 
 use App\Http\Controllers\Controller;
+use App\Models\Customer;
+use App\Models\ElectricBill;
 use App\Models\ElectricInvoice;
 use Illuminate\Http\Request;
 
@@ -37,6 +39,34 @@ class ElectricReporController extends Controller
 
         // Return a view or a PDF with the data
         return view('reports.daily_electric_invoice', compact('records', 'date', 'total','type','month','year'));
+    }
+
+    public function PrintUnpaidElectricBillsReport(Request $request){
+        $type=$request->query('type');
+        $customer_id=$request->query('customer_id');
+        if($type==='short'){
+             $records=Customer::query()
+                ->whereHas('bills', function($query){
+                    $query->where('is_paid', false);
+                })
+                ->withSum(['bills' => function($query){
+                    $query->where('is_paid', false);
+                }], 'total_amount')
+                ->when($customer_id, function($query) use($customer_id){
+                    $query->where('id', $customer_id);
+                })->get()
+                ;
+                $total=$records->sum('bills_sum_total_amount');
+            return view('reports.unpaid_electric_bills', compact('records','type','total'));
+        }
+
+         $records=ElectricBill::query()
+                ->where('is_paid', false)->with('customer')
+                ->when($customer_id, function($query) use($customer_id){
+                            $query->where('id', $customer_id);
+                })->get();
+        $total=$records->sum('total_amount');
+       return view('reports.unpaid_electric_bills', compact('records','type','total'));
     }
     
 }

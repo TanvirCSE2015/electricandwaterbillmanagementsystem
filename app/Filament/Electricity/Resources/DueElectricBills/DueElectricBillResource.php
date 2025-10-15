@@ -19,7 +19,7 @@ class DueElectricBillResource extends Resource
 {
     protected static ?string $model = DueElectricBill::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::CurrencyBangladeshi;
 
     public static function getModelLabel(): string
     {

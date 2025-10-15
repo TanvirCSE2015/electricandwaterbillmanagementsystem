@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class ElectricBill extends Model
 {
+    protected $appends = ['calculated_total_amount'];
 
     public function customer()
     {
