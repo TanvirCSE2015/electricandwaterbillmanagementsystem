@@ -14,14 +14,12 @@ class ElectricBillHelper
         $today = now();
         $dueDate = $bill->due_date ?? null;
 
-        $settings=ElectricBillSetting::first();
-
         if ($bill->surcharge > 0) {
             return $bill->surcharge;
         }
 
         if ($dueDate && $today->gt($dueDate)) {
-            $surcharge = round($bill->total_amount * ($settings->surcharge/100), 2);
+            $surcharge = round($bill->total_amount * $bill->surcharge_percentage, 2);
             return $surcharge;
         }
 

@@ -2,6 +2,7 @@
 @extends('reports.layouts.report_layout')
 @php
 use Rakibhstu\Banglanumber\NumberToBangla;
+use App\Helpers\ElectricBillHelper;
 
 $numto = new NumberToBangla();
 function en2bn($number): string
@@ -36,6 +37,7 @@ function en2bn($number): string
             @if ($type==='short')
                 <th>গ্রাহকের নাম</th>
                 <th>দোকান নং</th>
+                {{-- <th>মিটার নং</th>  --}}
                 <th>মোট বিল</th>
             
             @else
@@ -56,8 +58,8 @@ function en2bn($number): string
                     
                     <td>{{ $record->name }}</td>
                     <td>{{ $record->shop_no }}</td>
-                    
-                    <td>{{ $numto->bnCommaLakh($record->bills_sum_total_amount) }}</td>
+                    {{-- <td>{{ $record->meters->meter_number }}</td> --}}
+                    <td>{{ $numto->bnCommaLakh($record->grand_total) }}</td>
                     
                 </tr>
             @else 
@@ -67,7 +69,7 @@ function en2bn($number): string
                     <td>{{ en2bn($record->bill_month_name) }}</td>
                     <td>{{ en2bn($record->billing_year) }}</td>
                     <td>{{ en2bn($record->consumed_units) }}</td>
-                    <td>{{ $numto->bnCommaLakh($record->total_amount) }}</td>
+                    <td>{{ $numto->bnCommaLakh($record->grand_total) }}</td>
                 </tr>
             @endif
             
@@ -76,32 +78,24 @@ function en2bn($number): string
                 <td colspan="7">No records found.</td>
             </tr>
         @endforelse
-        @if ($type==='daily')
-            <tr>
-                <td colspan="5" class="text-end">মোট আদায়</td>
-                <td>{{ $numto->bnCommaLakh($total) }}</td>
-            </tr>
-             <tr>
-                <td colspan="2" class="text-end">মোট আদায় কথায়</td> 
-                <td colspan="4" class="text-end">{{ $numto->bnMoney($total) . ' মাত্র'}}</td>
-            </tr>
-         @elseif ($type==='monthly')
-            <tr class="text-center">
-                <td colspan="3" class="text-end">মোট আদায়</td>
-                <td class="text-center">{{ $numto->bnCommaLakh($total) }}</td>
-            </tr>
-             <tr>
-                <td colspan="1" class="text-end">মোট আদায় কথায়</td> 
-                <td colspan="3" class="text-end">{{ $numto->bnMoney($total) . ' মাত্র'}}</td>
-            </tr>
-        @elseif ($type==='yearly')
+        @if ($type==='short')
             <tr>
                 <td colspan="2" class="text-end">মোট আদায়</td>
-                <td class="text-center">{{ $numto->bnCommaLakh($total) }}</td>
+                <td>{{ $numto->bnCommaLakh($total) }}</td>
             </tr>
              <tr>
                 <td colspan="1" class="text-end">মোট আদায় কথায়</td> 
                 <td colspan="2" class="text-end">{{ $numto->bnMoney($total) . ' মাত্র'}}</td>
+            </tr>
+        
+        @else
+            <tr>
+                <td colspan="5" class="text-end">মোট আদায়</td>
+                <td class="text-center">{{ $numto->bnCommaLakh($total) }}</td>
+            </tr>
+             <tr>
+                <td colspan="2" class="text-end">মোট আদায় কথায়</td> 
+                <td colspan="4" class="text-end">{{ $numto->bnMoney($total) . ' মাত্র'}}</td>
             </tr>
         @endif
          

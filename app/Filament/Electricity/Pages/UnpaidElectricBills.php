@@ -14,6 +14,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\DB;
 use pxlrbt\FilamentExcel\Actions\ExportAction;
 use pxlrbt\FilamentExcel\Exports\ExcelExport;
 use UnitEnum;
@@ -79,24 +80,63 @@ class UnpaidElectricBills extends Page implements HasTable, HasForms
 
     protected function getTableQuery(): Builder
     {
+        $customerId=$this->form->getState()['customer_id'];
         if($this->form->getState()['type']==='short'){
             return Customer::query()
-                ->whereHas('bills', function($query){
-                    $query->where('is_paid', false);
-                })
-                ->withSum(['bills' => function($query){
-                    $query->where('is_paid', false);
-                }], 'total_amount')
-                ->when($this->form->getState()['customer_id'], function($query){
-                    $query->where('id', $this->form->getState()['customer_id']);
-                });
+            ->whereHas('bills', fn($q) => $q->where('is_paid', false))
+            ->when($customerId, fn($q) => $q->where('id', $customerId))
+            ->addSelect([
+                // Total unpaid amount
+                'total_amount' => ElectricBill::selectRaw('SUM(total_amount)')
+                    ->whereColumn('customer_id', 'customers.id')
+                    ->where('is_paid', false),
+                // Total surcharge dynamically
+                'total_surcharge' => ElectricBill::selectRaw("
+                    SUM(
+                        CASE 
+                            WHEN CURDATE() > due_date 
+                            THEN total_amount * surcharge_percentage
+                            ELSE 0 
+                        END
+                    )
+                ")
+                ->whereColumn('customer_id', 'customers.id')
+                ->where('is_paid', false),
+                // Grand total (amount + surcharge)
+                'grand_total' => ElectricBill::selectRaw("
+                    SUM(total_amount + 
+                        CASE 
+                            WHEN CURDATE() > due_date 
+                            THEN total_amount * surcharge_percentage
+                            ELSE 0 
+                        END
+                    )
+                ")
+                ->whereColumn('customer_id', 'customers.id')
+                ->where('is_paid', false),
+            ]);
         }
 
         return ElectricBill::query()
-                ->where('is_paid', false)->with('customer')
-                ->when($this->form->getState()['customer_id'], function($query){
-                            $query->where('id', $this->form->getState()['customer_id']);
-                });
+            ->where('is_paid', false)
+            ->with('customer')
+            ->when($customerId, fn($q) => $q->where('customer_id', $customerId))
+            ->select('*')
+            ->selectRaw("
+                CASE 
+                    WHEN CURDATE() > due_date 
+                    THEN total_amount * surcharge_percentage / 100 * DATEDIFF(CURDATE(), due_date)
+                    ELSE 0 
+                END AS calculated_surcharge
+            ")
+            ->selectRaw("
+                total_amount + 
+                CASE 
+                    WHEN CURDATE() > due_date 
+                    THEN total_amount * surcharge_percentage / 100 * DATEDIFF(CURDATE(), due_date)
+                    ELSE 0 
+                END AS grand_total
+            ");
     }
 
     protected function getTableColumns(): array
@@ -115,26 +155,26 @@ class UnpaidElectricBills extends Page implements HasTable, HasForms
                     ->label(__('fields.meter_number'))
                     ->searchable()
                     ->sortable(),  
-                TextColumn::make('bills_sum_total_amount')
+                TextColumn::make('grand_total')
                     ->label(__('fields.total_amount'))
-                    ->getStateUsing(function ($record) {
-                        $bills=$record->bills;
-                        $dueTotal=0;
-                        foreach ($bills as $bill) {
-                           if ($bill->is_paid) {
-                               continue;
-                            }else{
-                                if($bill->surcharge > 0){
-                                    $dueTotal += $bill->total_amount;
-                                    continue;
-                                }else{
-                                        $surcharge= \App\Helpers\ElectricBillHelper::calculateSurcharge($bill);
-                                        $dueTotal += $bill->total_amount + $surcharge;
-                                }
-                            }
-                        }
-                        return $dueTotal;
-                    })
+                    // ->getStateUsing(function ($record) {
+                    //     $bills=$record->bills;
+                    //     $dueTotal=0;
+                    //     foreach ($bills as $bill) {
+                    //        if ($bill->is_paid) {
+                    //            continue;
+                    //         }else{
+                    //             if($bill->surcharge > 0){
+                    //                 $dueTotal += $bill->total_amount;
+                    //                 continue;
+                    //             }else{
+                    //                     $surcharge= \App\Helpers\ElectricBillHelper::calculateSurcharge($bill);
+                    //                     $dueTotal += $bill->total_amount + $surcharge;
+                    //             }
+                    //         }
+                    //     }
+                    //     return $dueTotal;
+                    // })
                     ->formatStateUsing(fn($state)=>$this->en2bn($state))
                     ->sortable(),
                 ];
@@ -156,19 +196,19 @@ class UnpaidElectricBills extends Page implements HasTable, HasForms
                 TextColumn::make('consumed_units')
                         ->label(__('fields.consume_unit'))
                         ->formatStateUsing(fn($state)=>$this->en2bn($state)),
-                TextColumn::make('total_amount')
+                TextColumn::make('grand_total')
                         ->label(__('fields.total_amount'))
                         // ->formatStateUsing(fn($state)=>$this->en2bn($state))
-                        ->getStateUsing(function($record){
-                             $dueTotal=0;
-                             if($record->surcharge > 0){
-                                $dueTotal += $record->total_amount;
-                            }else{
-                                    $surcharge= \App\Helpers\ElectricBillHelper::calculateSurcharge($record);
-                                    $dueTotal += $record->total_amount + $surcharge;
-                            }
-                            return $dueTotal;
-                        })
+                        // ->getStateUsing(function($record){
+                        //      $dueTotal=0;
+                        //      if($record->surcharge > 0){
+                        //         $dueTotal += $record->total_amount;
+                        //     }else{
+                        //             $surcharge= \App\Helpers\ElectricBillHelper::calculateSurcharge($record);
+                        //             $dueTotal += $record->total_amount + $surcharge;
+                        //     }
+                        //     return $dueTotal;
+                        // })
                         ->formatStateUsing(fn($state)=>$this->en2bn($state)),
         ];
     }
@@ -182,7 +222,7 @@ class UnpaidElectricBills extends Page implements HasTable, HasForms
                 ->exports([
                     ExcelExport::make()
                         ->fromTable()
-                        ->withFilename('প্রেরিত মামলার তালিকা_' . now()->format('Y-m-d'))
+                        ->withFilename('বিদ্যুৎ বিলের বকেয়া রিপোর্ট_' . now()->format('Y-m-d'))
                         ->withWriterType(\Maatwebsite\Excel\Excel::XLSX),          
                 ]),
             
@@ -191,7 +231,7 @@ class UnpaidElectricBills extends Page implements HasTable, HasForms
             ->icon('heroicon-o-printer')
             ->url(fn () => route('unpaid-electric-bills-report.print', [
                 'type' => $this->form->getState()['type'] ?? 'daily',
-                'date' => $this->form->getState()['customer_id'] ?? null,
+                'customer_id' => $this->form->getState()['customer_id'] ?? null,
             ]))
             ->openUrlInNewTab(),
         ];

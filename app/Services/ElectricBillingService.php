@@ -40,6 +40,7 @@ class ElectricBillingService
             'base_amount'              => $baseAmount,
             'demand_charge'            => $setting->demand_charge,
             'service_charge'           => $setting->service_charge,
+            'surcharge_percentage'     =>$setting->surcharge/100,
             'surcharge'                => $surcharge,
             'vat'                      => $vat,
             'total_amount'             => $totalAmount,
