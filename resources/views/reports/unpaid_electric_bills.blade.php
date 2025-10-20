@@ -18,10 +18,13 @@ function en2bn($number): string
         <img src="{{ asset('images/logo.png') }}" alt="" srcset="">
         <h4>ঢাকা ক্যান্টনমেন্ট বোর্ড</h4>
         <h6>বিদ্যুৎ বকেয়া রিপোর্ট</h6>
+        
+        <h6>{{ $block_name ?? '' }}</h6>
     
 
         @if ($type==='short')
             <h6 class="text-decoration-underline" >সামারি রিপোর্ট</h6>
+            
          @else
             <h6 class="text-decoration-underline" >বিস্তারিত রিপোর্ট</h6>
         @endif
@@ -37,7 +40,7 @@ function en2bn($number): string
             @if ($type==='short')
                 <th>গ্রাহকের নাম</th>
                 <th>দোকান নং</th>
-                {{-- <th>মিটার নং</th>  --}}
+                <th>পূর্বের বকেয়া</th> 
                 <th>মোট বিল</th>
             
             @else
@@ -58,7 +61,7 @@ function en2bn($number): string
                     
                     <td>{{ $record->name }}</td>
                     <td>{{ $record->shop_no }}</td>
-                    {{-- <td>{{ $record->meters->meter_number }}</td> --}}
+                    <td>{{ $numto->bnCommaLakh($record->previousDue->is_paid ? 0 : $record->previousDue->amount)}}</td>
                     <td>{{ $numto->bnCommaLakh($record->grand_total) }}</td>
                     
                 </tr>
@@ -80,12 +83,12 @@ function en2bn($number): string
         @endforelse
         @if ($type==='short')
             <tr>
-                <td colspan="2" class="text-end">মোট আদায়</td>
-                <td>{{ $numto->bnCommaLakh($total) }}</td>
+                <td colspan="3" class="text-end">মোট আদায়</td>
+                <td class="text-center">{{ $numto->bnCommaLakh($total) }}</td>
             </tr>
              <tr>
                 <td colspan="1" class="text-end">মোট আদায় কথায়</td> 
-                <td colspan="2" class="text-end">{{ $numto->bnMoney($total) . ' মাত্র'}}</td>
+                <td colspan="3" class="text-end">{{ $numto->bnMoney($total) . ' মাত্র'}}</td>
             </tr>
         
         @else

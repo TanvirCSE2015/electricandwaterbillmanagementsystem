@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Electric;
 
 use App\Http\Controllers\Controller;
+use App\Models\Blocks;
 use App\Models\Customer;
 use App\Models\ElectricBill;
 use App\Models\ElectricInvoice;
@@ -20,6 +21,7 @@ class ElectricReporController extends Controller
         $month = $request->query('month');
         $year = $request->query('year');
         $type = $request->query('type');
+        $blockId = $request->query('block_id');
 
         // Fetch the data for the report based on the date
         $records = ElectricInvoice::when($date, function($query) use($date){
@@ -31,6 +33,7 @@ class ElectricReporController extends Controller
                     invoice_date, invoice_month,invoice_month_name, invoice_year, SUM(total_amount) as total_amount')
                 ->groupByRaw('invoice_date');
             })
+            ->when($blockId, fn($q) => $q->whereHas('customer', fn($q2) => $q2->where('block_id', $blockId)))
             ->when($year , function($query) use($year){
                 $query->where(['invoice_year' => $year])
                     ->selectRaw('ROW_NUMBER() OVER() as id, invoice_month, SUM(total_amount) as total_amount,
@@ -38,20 +41,25 @@ class ElectricReporController extends Controller
             })
             ->with('customer')
             ->get();
+        $bock=Blocks::find($blockId);
+        $block_name= $bock ? $bock->bolck_name : null;
         $total = $records->sum('total_amount');
 
         // Return a view or a PDF with the data
-        return view('reports.daily_electric_invoice', compact('records', 'date', 'total','type','month','year'));
+        return view('reports.daily_electric_invoice', compact('records', 'date', 'total','type','month','year','block_name'));
     }
 
     public function PrintUnpaidElectricBillsReport(Request $request){
         $type=$request->query('type');
         $customer_id=$request->query('customer_id');
+        $blockId = $request->query('block_id');
         if($type==='short'){
              $records = Customer::query()
                 ->whereHas('bills', fn($q) => $q->where('is_paid', false))
                 ->with(['bills' => fn($q) => $q->where('is_paid', false)])
+                ->with('previousDue')
                 ->when($customer_id, fn($q) => $q->where('id', $customer_id))
+                ->when($blockId, fn($q) => $q->where('block_id', $blockId))
                 ->get()
                 ->map(function ($customer) {
                     $totalAmount = $customer->bills->sum('total_amount');
@@ -60,7 +68,7 @@ class ElectricReporController extends Controller
                     foreach ($customer->bills as $bill) {
                         if (now()->gt($bill->due_date)) {
                             $daysLate = now()->diffInDays(Carbon::parse($bill->due_date));
-                            $totalSurcharge += $bill->total_amount * $bill->surcharge_percentage;
+                            $totalSurcharge += round($bill->total_amount * $bill->surcharge_percentage);
                         }
                     }
 
@@ -70,21 +78,25 @@ class ElectricReporController extends Controller
 
                     return $customer;
                 });
+            
+            $bock=Blocks::find($blockId);
+            $block_name= $bock ? $bock->bolck_name : null;
 
-            $total = $records->sum('grand_total');
-            return view('reports.unpaid_electric_bills', compact('records','type','total'));
+            $total = $records->sum('grand_total') + $records->sum(fn($cust) => $cust->previousDue->is_paid ? 0 : $cust->previousDue->amount);
+            return view('reports.unpaid_electric_bills', compact('records','type','total','block_name'));
         }
 
          $records = ElectricBill::query()
             ->where('is_paid', false)
             ->with('customer')
             ->when($customer_id, fn($q) => $q->where('customer_id', $customer_id))
+            ->when($blockId, fn($q) => $q->whereHas('customer', fn($q2) => $q2->where('block_id', $blockId)))
             ->get()
             ->map(function ($bill) {
                 // Auto add surcharge if overdue
                 if (now()->gt($bill->due_date)) {
                     $daysLate = now()->diffInDays(Carbon::parse($bill->due_date));
-                    $bill->calculated_surcharge = $bill->total_amount * $bill->surcharge_percentage ;
+                    $bill->calculated_surcharge = round($bill->total_amount * $bill->surcharge_percentage) ;
                 } else {
                     $bill->calculated_surcharge = 0;
                 }
@@ -94,20 +106,25 @@ class ElectricReporController extends Controller
             });
 
         $total = $records->sum('grand_total');
-       return view('reports.unpaid_electric_bills', compact('records','type','total'));
+        $bock=Blocks::find($blockId);
+        $block_name= $bock ? $bock->bolck_name : null;
+        
+       return view('reports.unpaid_electric_bills', compact('records','type','total','block_name'));
     }
 
     public function PrintElectricLaserReport(Request $request){
         date_default_timezone_set('Asia/Dhaka');
-        $customer_id=$request->query('customer_id');
-        $month=$request->query('month');
-        $year=$request->query('year');
+        $customer_id=$request->query('customer_id') ?? null;
+        $month=$request->query('month') ?? null;
+        $year=$request->query('year') ?? null;
+        $blockId=$request->query('block_id') ?? null;
 
         $records = ElectricBill::query()
             ->with('customer')
             ->when($customer_id, fn($q) => $q->where('customer_id', $customer_id))
             ->when($month, fn($q) => $q->where('billing_month', $month))
             ->when($year, fn($q) => $q->where('billing_year', $year))
+            ->when($blockId, fn($q) => $q->whereHas('customer', fn($q2) => $q2->where('block_id', $blockId)))
             ->get()
             ->map(function ($bill) {
                 $today = Carbon::today();
@@ -124,7 +141,10 @@ class ElectricReporController extends Controller
                 return $bill;
             });
 
-        return view('reports.electric_laser', compact('records','customer_id','month','year'));
+            $bock=Blocks::find($blockId);
+            $block_name= $bock ? $bock->bolck_name : null;
+
+        return view('reports.electric_laser', compact('records','customer_id','month','year','block_name'));
 
     }
     

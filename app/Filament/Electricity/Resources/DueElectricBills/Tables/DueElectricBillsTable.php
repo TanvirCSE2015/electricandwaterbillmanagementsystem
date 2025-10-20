@@ -30,6 +30,11 @@ class DueElectricBillsTable
                     ->label(__('fields.meter_number'))
                     ->searchable()
                     ->sortable(),  
+                TextColumn::make('previousDue.amount')
+                    ->label(__('fields.previous_due'))
+                    ->getStateUsing(fn($record) => $record->previousDue?->amount ?? 0)
+                    ->numeric()
+                    ->sortable(),
                 TextColumn::make('bills_sum_total_amount')
                     ->label(__('fields.total_amount'))
                     ->getStateUsing(function ($record) {
@@ -44,11 +49,11 @@ class DueElectricBillsTable
                                     continue;
                                 }else{
                                         $surcharge= \App\Helpers\ElectricBillHelper::calculateSurcharge($bill);
-                                        $dueTotal += $bill->total_amount + $surcharge;
+                                        $dueTotal += $bill->total_amount + $surcharge + $record->previousDue?->amount ?? 0;
                                 }
                             }
                         }
-                        return $dueTotal;
+                        return round($dueTotal);
                     })
                     ->numeric()
                     ->sortable(),

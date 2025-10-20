@@ -1,6 +1,7 @@
 <?php
 return [
     'name' => 'নাম',
+    'block_name' => 'ব্লক নাম',
     'email' => 'ইমেইল',
     'password' => 'পাসওয়ার্ড',
     'panel_type' => 'প্যানেল নির্বাচন করুন',
@@ -38,6 +39,8 @@ return [
     'created_by' => 'তৈরি করেছেন',
     'base_amount' => 'বেস অ্যামাউন্ট',
     'remarks' => 'মন্তব্য',
+    'previous_due' => 'পূর্বের বকেয়া',
+    'total' => 'বর্তমান বকেয়া',
     'created_at' => 'তৈরির সময়',
     'updated_at' => 'আপডেটের সময়',
 ];

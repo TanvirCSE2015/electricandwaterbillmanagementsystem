@@ -22,6 +22,7 @@ function en2bn($number): string
         <h6 class="text-decoration-underline">{{ $numto->bnMonth($month) .' - ' . en2bn($year) . 'ইং'}}</h6>
             
         @endif
+        <h6>{{ $block_name ?? '' }}</h6>
 
     </div>
     <table class="table table-bordered table-striped" id="sales-table">

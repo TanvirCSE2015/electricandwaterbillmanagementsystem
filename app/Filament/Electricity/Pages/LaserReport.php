@@ -33,6 +33,7 @@ class LaserReport extends Page implements HasTable, HasForms
     public ?int $customer_id=null;
     public ?int $month=null;
     public ?int $year=null;
+    public ?int $block_id=null;
 
     public function getTitle(): string
     {
@@ -108,6 +109,13 @@ class LaserReport extends Page implements HasTable, HasForms
                 ->afterStateUpdated(function($state){
                     return $this->year=$state;
                 }),
+
+                Select::make('block_id')
+                    ->label('ব্লক')
+                    ->placeholder('ব্লক নির্বাচন করুন')
+                    ->options(\App\Models\Blocks::query()->pluck('bolck_name','id'))
+                    ->reactive()
+                    ->afterStateUpdated(fn()=>$this->resetTable()),
              ])
             ];
     }
@@ -117,27 +125,30 @@ class LaserReport extends Page implements HasTable, HasForms
         $customerId=$this->form->getState()['customer_id'];
         $month=$this->form->getState()['month'];
         $year=$this->form->getState()['year'];
-        
+        $blockId=$this->form->getState()['block_id'];
         return ElectricBill::query()
             ->with('customer')
             ->when($customerId, fn($q) => $q->where('customer_id', $customerId))
             ->when($month, fn($q) => $q->where('billing_month', $month))
             ->when($year, fn($q) => $q->where('billing_year', $year))
+            ->when($blockId, fn($q) => $q->whereHas('customer', fn($q2) => $q2->where('block_id', $blockId)))
             ->select('*')
             ->selectRaw("
-                CASE 
-                    WHEN CURDATE() > due_date 
-                    THEN total_amount * surcharge_percentage
-                    ELSE 0 
-                END AS calculated_surcharge
+                ROUND(
+                    CASE 
+                        WHEN CURDATE() > due_date 
+                        THEN total_amount * surcharge_percentage
+                        ELSE 0 
+                    END) AS calculated_surcharge
             ")
             ->selectRaw("
-                total_amount + 
+            ROUND(total_amount + 
                 CASE 
                     WHEN CURDATE() > due_date 
                     THEN total_amount * surcharge_percentage
                     ELSE 0 
-                END AS grand_total
+                END) AS grand_total
+            
             ");
     }
 
@@ -196,6 +207,7 @@ class LaserReport extends Page implements HasTable, HasForms
                 'customer_id' => $this->form->getState()['customer_id'] ?? null,
                 'month' => $this->form->getState()['month'] ?? null,
                 'year' => $this->form->getState()['year'] ?? null,
+                'block_id' => $this->form->getState()['block_id'] ?? null,
             ]))
             ->openUrlInNewTab(),
         ];

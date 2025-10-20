@@ -4,6 +4,7 @@ namespace App\Filament\Electricity\Pages;
 
 use App\Models\Customer;
 use App\Models\ElectricBill;
+use Dom\Text;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Concerns\InteractsWithForms;
@@ -32,6 +33,7 @@ class UnpaidElectricBills extends Page implements HasTable, HasForms
 
     public ?string $type=null;
     public ?int $customer_id=null;
+    public ?int $block_id=null;
 
     public function en2bn($number): string
     {
@@ -72,6 +74,13 @@ class UnpaidElectricBills extends Page implements HasTable, HasForms
                         ->searchable()
                         ->reactive()
                         ->afterStateUpdated(fn()=>$this->resetTable()),
+                    Select::make('block_id')
+                        ->label('ব্লক')
+                        ->placeholder('ব্লক নির্বাচন করুন')
+                        ->options(\App\Models\Blocks::query()->pluck('bolck_name','id'))
+                        ->searchable()
+                        ->reactive()
+                        ->afterStateUpdated(fn()=>$this->resetTable()),
                 ])
             
 
@@ -81,11 +90,17 @@ class UnpaidElectricBills extends Page implements HasTable, HasForms
     protected function getTableQuery(): Builder
     {
         $customerId=$this->form->getState()['customer_id'];
+        $blockId=$this->form->getState()['block_id'];
         if($this->form->getState()['type']==='short'){
             return Customer::query()
             ->whereHas('bills', fn($q) => $q->where('is_paid', false))
             ->when($customerId, fn($q) => $q->where('id', $customerId))
+            ->when($blockId, fn($q) => $q->where('block_id', $blockId))
             ->addSelect([
+                'previous_due' => \App\Models\PreviousDue::select('amount')
+                    ->whereColumn('customer_id', 'customers.id')
+                    ->where('is_paid', false)
+                    ->limit(1),
                 // Total unpaid amount
                 'total_amount' => ElectricBill::selectRaw('SUM(total_amount)')
                     ->whereColumn('customer_id', 'customers.id')
@@ -104,12 +119,14 @@ class UnpaidElectricBills extends Page implements HasTable, HasForms
                 ->where('is_paid', false),
                 // Grand total (amount + surcharge)
                 'grand_total' => ElectricBill::selectRaw("
-                    SUM(total_amount + 
-                        CASE 
-                            WHEN CURDATE() > due_date 
-                            THEN total_amount * surcharge_percentage
-                            ELSE 0 
-                        END
+                    ROUND(
+                        SUM(
+                            total_amount +
+                            CASE WHEN CURDATE() > due_date
+                                THEN total_amount * surcharge_percentage
+                                ELSE 0
+                            END
+                        )
                     )
                 ")
                 ->whereColumn('customer_id', 'customers.id')
@@ -121,21 +138,24 @@ class UnpaidElectricBills extends Page implements HasTable, HasForms
             ->where('is_paid', false)
             ->with('customer')
             ->when($customerId, fn($q) => $q->where('customer_id', $customerId))
+            ->when($blockId, fn($q) => $q->whereHas('customer', fn($q2) => $q2->where('block_id', $blockId)))
             ->select('*')
             ->selectRaw("
                 CASE 
                     WHEN CURDATE() > due_date 
-                    THEN total_amount * surcharge_percentage / 100 * DATEDIFF(CURDATE(), due_date)
+                    THEN total_amount * surcharge_percentage
                     ELSE 0 
                 END AS calculated_surcharge
             ")
             ->selectRaw("
-                total_amount + 
-                CASE 
-                    WHEN CURDATE() > due_date 
-                    THEN total_amount * surcharge_percentage / 100 * DATEDIFF(CURDATE(), due_date)
-                    ELSE 0 
-                END AS grand_total
+                ROUND(
+                    total_amount +
+                    CASE 
+                        WHEN CURDATE() > due_date 
+                        THEN total_amount * surcharge_percentage 
+                        ELSE 0 
+                    END
+                ) AS grand_total
             ");
     }
 
@@ -155,7 +175,18 @@ class UnpaidElectricBills extends Page implements HasTable, HasForms
                     ->label(__('fields.meter_number'))
                     ->searchable()
                     ->sortable(),  
+                
+                TextColumn::make('previous_due')
+                        ->label(__('fields.previous_due'))
+                        ->formatStateUsing(fn($state)=>$this->en2bn($state))
+                        ->getStateUsing(function ($record) {
+                            return $record->previousDue->is_paid ? 0 : $record->previousDue->amount;
+                        }),
                 TextColumn::make('grand_total')
+                    ->label(__('fields.total'))
+                    ->formatStateUsing(fn($state)=>$this->en2bn($state))
+                    ->sortable(),
+                TextColumn::make('total')
                     ->label(__('fields.total_amount'))
                     // ->getStateUsing(function ($record) {
                     //     $bills=$record->bills;
@@ -175,6 +206,10 @@ class UnpaidElectricBills extends Page implements HasTable, HasForms
                     //     }
                     //     return $dueTotal;
                     // })
+                    ->getStateUsing(function ($record) {
+                        
+                        return $record->grand_total + ($record->previous_due);
+                    })
                     ->formatStateUsing(fn($state)=>$this->en2bn($state))
                     ->sortable(),
                 ];
@@ -232,9 +267,20 @@ class UnpaidElectricBills extends Page implements HasTable, HasForms
             ->url(fn () => route('unpaid-electric-bills-report.print', [
                 'type' => $this->form->getState()['type'] ?? 'daily',
                 'customer_id' => $this->form->getState()['customer_id'] ?? null,
+                'block_id' => $this->form->getState()['block_id'] ?? null,
             ]))
             ->openUrlInNewTab(),
         ];
+    }
+
+
+    public function getTotalAmount()
+    {
+        $records=$this->getTableQuery()->get();
+        if($this->form->getState()['type']==='short'){
+            return $records->sum('grand_total') + $records->sum('previous_due');
+        }
+        return $records->sum('grand_total');
     }
 
 

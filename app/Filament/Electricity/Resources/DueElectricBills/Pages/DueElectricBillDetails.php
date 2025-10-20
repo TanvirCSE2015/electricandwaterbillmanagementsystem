@@ -155,7 +155,7 @@ class DueElectricBillDetails extends Page implements HasForms, HasTable
                     // Recalculate total with the new surcharge
                     $record->total_amount = $baseAmount + $state;
 
-                    $record->surcharge = $state;
+                    $record->surcharge = round($state, 2);
                     $record->save();
                     $this->resetTable();
                 }),
@@ -165,7 +165,7 @@ class DueElectricBillDetails extends Page implements HasForms, HasTable
                    
                     if($record->surcharge == 0){
                         $surcharge = ElectricBillHelper::calculateSurcharge($record);
-                        return $record->total_amount + $surcharge;
+                        return round($record->total_amount + $surcharge, 2);
                     }else{
                         return $record->total_amount;
                     }

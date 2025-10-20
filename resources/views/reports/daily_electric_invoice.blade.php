@@ -26,12 +26,16 @@ function en2bn($number): string
         @endif
 
         @if ($type==='daily')
+            <h6>{{ $block_name ? $block_name : '' }}</h6>
             <h6 class="text-decoration-underline" >তারিখঃ {{ en2bn($date) }} ইং</h6>
         @elseif ($type === 'monthly')
+            <h6>{{ $block_name ? $block_name : '' }}</h6>
             <h6 class="text-decoration-underline" >মাসঃ {{ $numto->bnMonth($month) .'-'. en2bn($year)}} ইং</h6>
          @else
+            <h6>{{ $block_name ? $block_name : '' }}</h6>
             <h6 class="text-decoration-underline" >বছরঃ {{ en2bn($year) }} ইং</h6>
         @endif
+
 
     </div>
     <div class="d-flex flex-row-reverse bd-highlight">

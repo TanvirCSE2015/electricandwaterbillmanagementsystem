@@ -19,7 +19,7 @@ class ElectricBillHelper
         }
 
         if ($dueDate && $today->gt($dueDate)) {
-            $surcharge = round($bill->total_amount * $bill->surcharge_percentage, 2);
+            $surcharge = round($bill->total_amount * $bill->surcharge_percentage);
             return $surcharge;
         }
 

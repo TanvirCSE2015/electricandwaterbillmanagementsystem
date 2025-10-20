@@ -25,7 +25,7 @@ class ElectricBillingService
             + $setting->demand_charge
             + $setting->service_charge
             + $surcharge
-            + $vat;
+            + round($vat);
 
         return ElectricBill::create([
             'customer_id'              => $reading->meter->customer_id,
@@ -42,8 +42,8 @@ class ElectricBillingService
             'service_charge'           => $setting->service_charge,
             'surcharge_percentage'     =>$setting->surcharge/100,
             'surcharge'                => $surcharge,
-            'vat'                      => $vat,
-            'total_amount'             => $totalAmount,
+            'vat'                      => round($vat),
+            'total_amount'             => round($totalAmount),
             'is_paid'                  => false,
             'due_date'                 => Carbon::parse($reading->reading_date)->addDays(15),
             'created_by'               => $userId,
@@ -64,7 +64,7 @@ class ElectricBillingService
         $baseAmount       = $consumedUnits * $setting->unit_price;
         $systemLossAmount = $setting->system_loss * $setting->unit_price;
 
-        $surcharge = $bill->surcharge; // keep previous surcharge, recalc later if unpaid
+        $surcharge = round($bill->surcharge); // keep previous surcharge, recalc later if unpaid
         $vat = ($baseAmount + $setting->demand_charge + $systemLossAmount + $setting->service_charge)
             * ($setting->vat / 100);
 
@@ -73,7 +73,7 @@ class ElectricBillingService
             + $setting->demand_charge
             + $setting->service_charge
             + $surcharge
-            + $vat;
+            + round($vat);
 
         $bill->update([
             'customer_id'              => $reading->meter->customer_id,
@@ -87,9 +87,9 @@ class ElectricBillingService
             'base_amount'              => $baseAmount,
             'demand_charge'            => $setting->demand_charge,
             'service_charge'           => $setting->service_charge,
-            'surcharge'                => $surcharge,
-            'vat'                      => $vat,
-            'total_amount'             => $totalAmount,
+            'surcharge'                => round($surcharge),
+            'vat'                      => round($vat),
+            'total_amount'             => round($totalAmount),
             'due_date'             => Carbon::parse($reading->reading_date)->addDays(15),
         ]);
 

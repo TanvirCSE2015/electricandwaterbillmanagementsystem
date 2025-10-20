@@ -47,6 +47,8 @@ class DailyElectricInvoice extends Page implements HasForms, HasTable
     public ?int $month=null;
     public ?string $year=null;
 
+    public ?int $block_id=null;
+
     public function mount()
     {
         $this->date = now()->toDateString();
@@ -151,7 +153,15 @@ class DailyElectricInvoice extends Page implements HasForms, HasTable
                 ->afterStateUpdated(function($state){
                     return $this->year=$state;
                 }),
+                Select::make('block_id')
+                    ->label('ব্লক')
+                    ->searchable()
+                    ->placeholder('ব্লক নির্বাচন করুন')
+                    ->options(\App\Models\Blocks::query()->pluck('bolck_name','id'))
+                    ->reactive()
+                    ->afterStateUpdated(fn()=>$this->resetTable()),
             ]),
+
                 
         ];
     }
@@ -173,15 +183,18 @@ class DailyElectricInvoice extends Page implements HasForms, HasTable
         $date=$this->form->getState()['date'] ?? null;
         $month=$this->form->getState()['month'] ?? null;
         $year=$this->form->getState()['year'] ?? null;
+        $blockId=$this->form->getState()['block_id'] ?? null;
         $query = \App\Models\ElectricInvoice::query();
 
         if ($this->form->getState()['type'] === 'daily' && $date) {
-            $query->whereDate('invoice_date', $date);
+            $query->whereDate('invoice_date', $date)
+            ->when($blockId, fn($q) => $q->whereHas('customer', fn($q2) => $q2->where('block_id', $blockId)));
         }
 
         if ($this->form->getState()['type'] === 'monthly' && $month && $year) {
             return $query
                 ->where(['invoice_month'=> $month,'invoice_year'=>$year])
+                ->when($blockId, fn($q) => $q->whereHas('customer', fn($q2) => $q2->where('block_id', $blockId)))
                 
                ->selectRaw('ROW_NUMBER() OVER() as id,
                     invoice_date,
@@ -194,7 +207,7 @@ class DailyElectricInvoice extends Page implements HasForms, HasTable
         }
 
         if ($this->form->getState()['type'] === 'yearly' && $year) {
-            return $query
+            return $query->when($blockId, fn($q) => $q->whereHas('customer', fn($q2) => $q2->where('block_id', $blockId)))
              ->selectRaw('
                 ROW_NUMBER() OVER() as id,
                  invoice_month,
@@ -298,6 +311,7 @@ class DailyElectricInvoice extends Page implements HasForms, HasTable
                 'date' => $this->form->getState()['date'] ?? null,
                 'month' => $this->form->getState()['month'] ?? null,
                 'year' => $this->form->getState()['year'] ?? null,
+                'block_id' => $this->form->getState()['block_id'] ?? null,
             ]))
             ->openUrlInNewTab(),
 
@@ -311,19 +325,23 @@ class DailyElectricInvoice extends Page implements HasForms, HasTable
         $date = $this->form->getState()['date'] ?? null;
         $month = $this->form->getState()['month'] ?? null;
         $year = $this->form->getState()['year'] ?? null;
+        $blockId=$this->form->getState()['block_id'] ?? null;
 
         $query = \App\Models\ElectricInvoice::query();
 
         if ($type === 'daily' && $date) {
-            $query->whereDate('invoice_date', $date);
+            $query->whereDate('invoice_date', $date)
+            ->when($blockId, fn($q) => $q->whereHas('customer', fn($q2) => $q2->where('block_id', $blockId)));
         }
 
         if ($type === 'monthly' && $month && $year) {
-            $query->where(['invoice_month'=> $month, 'invoice_year'=> $year]);
+            $query->where(['invoice_month'=> $month, 'invoice_year'=> $year])
+            ->when($blockId, fn($q) => $q->whereHas('customer', fn($q2) => $q2->where('block_id', $blockId)));
         }
 
         if ($type === 'yearly' && $year) {
-            $query->where('invoice_year', $year);
+            $query->where('invoice_year', $year)
+            ->when($blockId, fn($q) => $q->whereHas('customer', fn($q2) => $q2->where('block_id', $blockId)));
         }
 
         $sum = $query->sum('total_amount');

@@ -3,8 +3,10 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Customer extends Model
 {
@@ -26,5 +28,15 @@ class Customer extends Model
     public function dueBills(): HasMany
     {
         return $this->hasMany(DueElectricBill::class);
+    }
+
+    public function previousDue(): HasOne
+    {
+        return $this->hasOne(PreviousDue::class);
+    }
+
+    public function block(): BelongsTo
+    {
+        return $this->belongsTo(Blocks::class);
     }
 }
