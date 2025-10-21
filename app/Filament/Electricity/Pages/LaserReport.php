@@ -29,7 +29,7 @@ class LaserReport extends Page implements HasTable, HasForms
 
     protected static string | UnitEnum | null $navigationGroup = 'লেজার সমূহ';
     
-    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-folder-open';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-book-open';
     public ?int $customer_id=null;
     public ?int $month=null;
     public ?int $year=null;

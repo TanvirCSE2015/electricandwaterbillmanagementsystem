@@ -40,6 +40,7 @@ return [
     'base_amount' => 'বেস অ্যামাউন্ট',
     'remarks' => 'মন্তব্য',
     'previous_due' => 'পূর্বের বকেয়া',
+    'paid_amount' => 'পরিশোধিত পরিমাণ',
     'total' => 'বর্তমান বকেয়া',
     'created_at' => 'তৈরির সময়',
     'updated_at' => 'আপডেটের সময়',

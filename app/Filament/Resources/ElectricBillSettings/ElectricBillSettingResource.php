@@ -19,7 +19,7 @@ class ElectricBillSettingResource extends Resource
 {
     protected static ?string $model = ElectricBillSetting::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::Cog8Tooth;
 
     protected static string | UnitEnum | null $navigationGroup = 'সেটংসমূহ';
 

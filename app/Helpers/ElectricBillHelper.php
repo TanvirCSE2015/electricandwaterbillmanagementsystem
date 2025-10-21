@@ -88,7 +88,47 @@ class ElectricBillHelper
             //     'message' => 'ইনভয়েস সফলভাবে তৈরি হয়েছে!',
             //     'invoice' => $invoice,
             // ];
-            return redirect()->route('electric-receipt.print',['id'=>$invoice->id]);
+            return redirect()->route('electric-receipt.print',['id'=>$invoice->id,'type'=>'current']);
+        });
+    }
+
+    public static function previousDueInvoice(int $customerId, int $userId, float $paidAmount)
+    {
+        return DB::transaction(function () use ($customerId, $userId, $paidAmount) {
+            $previousDue = \App\Models\PreviousDue::where('customer_id', $customerId)
+                ->where('is_paid', false)
+                ->first();
+            $dueTotal= $previousDue->amount - $paidAmount;
+
+            if (!$previousDue) {
+                return ['status' => 'warning', 'message' => 'কোনো পূর্বের বকেয়া পাওয়া যায়নি।'];
+            }
+
+            $invoiceNumber = 'INV-PD-' . now()->format('YmdHis') . '-' . $customerId;
+
+            // Create invoice
+            $invoice = ElectricInvoice::create([
+                'customer_id' => $customerId,
+                'invoice_date' => now(),
+                'invoice_month' => now()->month,
+                'invoice_month_name' => now()->format('F'),
+                'invoice_year' => now()->year,
+                'from_month' => 'পূর্বের বকেয়া',
+                'to_month' => '',
+                'total_amount' => $paidAmount,
+                'due_type' => 'previous_due',
+                'created_by' => $userId,
+            ]);
+
+            // Update paid status
+            $previousDue->is_paid = $dueTotal == 0 ? true : false;
+            $previousDue->amount= $dueTotal;
+            // $previousDue->paid_by = $userId;
+            // $previousDue->payment_date = now();
+            // $previousDue->electric_invoice_id = $invoice->id;
+            $previousDue->save();
+
+            return redirect()->route('electric-receipt.print',['id'=>$invoice->id,'type'=>'previous']);
         });
     }
 }

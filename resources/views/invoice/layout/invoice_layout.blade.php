@@ -37,9 +37,16 @@
     <script src="{{ asset('js/bootstrap/js/bootstrap.min.js') }}"></script>
     <script>
     function printReport() {
+        var type = '{{ $type ?? '' }}';
          window.print();
             window.onafterprint = function () {
-                window.close();
+                if(type==='current'){
+                    window.location.href = '/electricity/due-electric-bills';
+                } else if(type==='previous'){
+                 window.location.href = '/electricity/previous-dues';
+                } else {
+                    window.close();
+                }
             };
     }
  </script>

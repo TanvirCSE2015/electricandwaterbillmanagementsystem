@@ -15,6 +15,11 @@ class Customer extends Model
         return $this->hasMany(Meter::class);
     }
 
+    public function activeMeter(): HasOne
+    {
+        return $this->hasOne(Meter::class)->where('status', 'active');
+    }
+
     public function readings(): HasManyThrough
     {
         return $this->hasManyThrough(MeterReading::class, Meter::class);

@@ -9,7 +9,8 @@ use Illuminate\Http\Request;
 class ElectricReceiptController extends Controller
 {
     public function PrintElectricReceipt(Request $request){
+        $type = $request->query('type');
         $receipt=ElectricInvoice::with('customer')->find($request->id);
-        return view('invoice.printelectricinvoice', compact('receipt'));
+        return view('invoice.printelectricinvoice', compact('receipt','type'));
     }
 }

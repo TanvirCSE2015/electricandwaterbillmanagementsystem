@@ -26,7 +26,7 @@ class DueElectricBillsTable
                     ->label(__('fields.shop_no'))
                     ->searchable()
                     ->sortable(), 
-                TextColumn::make('meters.meter_number')
+                TextColumn::make('activeMeter.meter_number')
                     ->label(__('fields.meter_number'))
                     ->searchable()
                     ->sortable(),  

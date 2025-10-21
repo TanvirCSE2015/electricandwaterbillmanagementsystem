@@ -35,6 +35,7 @@ class UnpaidElectricBills extends Page implements HasTable, HasForms
     public ?int $customer_id=null;
     public ?int $block_id=null;
 
+
     public function en2bn($number): string
     {
         $en = ['0','1','2','3','4','5','6','7','8','9','January','February','March','April','May','June','July','August','September','October','November','December'];
@@ -61,7 +62,8 @@ class UnpaidElectricBills extends Page implements HasTable, HasForms
                         ->label('রিপোর্টের ধরন')
                         ->options([
                             'short'=>'সংক্ষিপ্ত',
-                            'detailts'=>'বিস্তারিত'
+                            'detailts'=>'বিস্তারিত',
+                            'pre_due'=>'পূর্বের বকেয়া',
                         ])
                         ->searchable()
                         ->reactive()
@@ -134,6 +136,17 @@ class UnpaidElectricBills extends Page implements HasTable, HasForms
             ]);
         }
 
+        if($this->form->getState()['type']==='pre_due'){
+            return Customer::query()
+            ->whereHas('previousDue', fn($q) => $q->where('is_paid', false))
+            ->when($customerId, fn($q) => $q->where('id', $customerId))
+            ->when($blockId, fn($q) => $q->where('block_id', $blockId))
+            ->select('*')
+            ->selectRaw('
+                (SELECT amount FROM previous_dues WHERE customer_id = customers.id AND is_paid = false LIMIT 1) AS previous_due
+            ');
+        }
+
         return ElectricBill::query()
             ->where('is_paid', false)
             ->with('customer')
@@ -171,7 +184,7 @@ class UnpaidElectricBills extends Page implements HasTable, HasForms
                     ->label(__('fields.shop_no'))
                     ->searchable()
                     ->sortable(), 
-                TextColumn::make('meters.meter_number')
+                TextColumn::make('activeMeter.meter_number')
                     ->label(__('fields.meter_number'))
                     ->searchable()
                     ->sortable(),  
@@ -214,6 +227,30 @@ class UnpaidElectricBills extends Page implements HasTable, HasForms
                     ->sortable(),
                 ];
             
+        }
+
+        if($this->form->getState()['type']==='pre_due'){
+            return[
+                TextColumn::make('name')
+                    ->label(__('fields.name'))
+                    ->searchable()
+                    ->sortable(),
+                TextColumn::make('shop_no')
+                    ->label(__('fields.shop_no'))
+                    ->searchable()
+                    ->sortable(), 
+                TextColumn::make('activeMeter.meter_number')
+                    ->label(__('fields.meter_number'))
+                    ->searchable()
+                    ->sortable(),  
+                
+                TextColumn::make('previous_due')
+                        ->label(__('fields.previous_due'))
+                        ->formatStateUsing(fn($state)=>$this->en2bn($state))
+                        ->getStateUsing(function ($record) {
+                            return $record->previousDue->is_paid ? 0 : $record->previousDue->amount;
+                        }),
+            ];
         }
 
         return [
@@ -279,6 +316,9 @@ class UnpaidElectricBills extends Page implements HasTable, HasForms
         $records=$this->getTableQuery()->get();
         if($this->form->getState()['type']==='short'){
             return $records->sum('grand_total') + $records->sum('previous_due');
+        }
+        if($this->form->getState()['type']==='pre_due'){
+            return $records->sum('previous_due');
         }
         return $records->sum('grand_total');
     }

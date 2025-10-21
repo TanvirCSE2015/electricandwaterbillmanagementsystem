@@ -41,7 +41,15 @@ function en2bn($number): string
                 <th>গ্রাহকের নাম</th>
                 <th>দোকান নং</th>
                 <th>পূর্বের বকেয়া</th> 
+                <th>বর্তমান বকেয়া</th>
                 <th>মোট বিল</th>
+            
+                @elseif ($type==='pre_due')
+                <th>গ্রাহকের নাম</th>
+                <th>দোকান নং</th>
+                <th>ব্লক</th>
+                <th>পূর্বের বকেয়া</th>
+                {{-- <th>ব্লক</th> --}}
             
             @else
                 <th>গ্রাহকের নাম</th>
@@ -63,8 +71,17 @@ function en2bn($number): string
                     <td>{{ $record->shop_no }}</td>
                     <td>{{ $numto->bnCommaLakh($record->previousDue->is_paid ? 0 : $record->previousDue->amount)}}</td>
                     <td>{{ $numto->bnCommaLakh($record->grand_total) }}</td>
+                    <td>{{ $numto->bnCommaLakh( ($record->previousDue->is_paid ? 0 : $record->previousDue->amount) 
+                            + $record->grand_total ) }}</td>
                     
                 </tr>
+
+            @elseif ($type==='pre_due')
+                <tr class="text-center" style="font-size: 14px">
+                    <td>{{ $record->name }}</td>
+                    <td>{{ $record->shop_no }}</td>
+                    <td>{{ $record->block->bolck_name }}</td>
+                    <td>{{ $numto->bnCommaLakh($record->previousDue->amount) }}</td>
             @else 
                 <tr class="text-center" style="font-size: 14px">
                     <td>{{ $record->customer->name }}</td>
@@ -83,21 +100,30 @@ function en2bn($number): string
         @endforelse
         @if ($type==='short')
             <tr>
-                <td colspan="3" class="text-end">মোট আদায়</td>
+                <td colspan="4" class="text-end">মোট বকেয়া</td>
                 <td class="text-center">{{ $numto->bnCommaLakh($total) }}</td>
             </tr>
              <tr>
-                <td colspan="1" class="text-end">মোট আদায় কথায়</td> 
+                <td colspan="2" class="text-end">মোট বকেয়া কথায়</td> 
                 <td colspan="3" class="text-end">{{ $numto->bnMoney($total) . ' মাত্র'}}</td>
+            </tr>
+        @elseif ($type==='pre_due')
+            <tr>
+                <td colspan="3" class="text-end">মোট বকেয়া</td>
+                <td class="text-center">{{ $numto->bnCommaLakh($total) }}</td>
+            </tr>
+            <tr>
+                <td colspan="2" class="text-end">মোট বকেয়া কথায়</td> 
+                <td colspan="4" class="text-end">{{ $numto->bnMoney($total) . ' মাত্র'}}</td> 
             </tr>
         
         @else
             <tr>
-                <td colspan="5" class="text-end">মোট আদায়</td>
+                <td colspan="5" class="text-end">মোট বকেয়া</td>
                 <td class="text-center">{{ $numto->bnCommaLakh($total) }}</td>
             </tr>
              <tr>
-                <td colspan="2" class="text-end">মোট আদায় কথায়</td> 
+                <td colspan="2" class="text-end">মোট বকেয়া কথায়</td> 
                 <td colspan="4" class="text-end">{{ $numto->bnMoney($total) . ' মাত্র'}}</td>
             </tr>
         @endif

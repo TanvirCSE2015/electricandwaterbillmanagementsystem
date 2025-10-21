@@ -14,6 +14,8 @@ Route::get('/print-unpaid-electric-bills-report',[ElectricReporController::class
 ->name('unpaid-electric-bills-report.print')->middleware('auth');
 Route::get('/print-electric-laser-report',[ElectricReporController::class,'PrintElectricLaserReport'])
 ->name('electric-laser-report.print')->middleware('auth');
+Route::get('/print-electric-invoice-pre-due',[ElectricReporController::class,'PrintElectricPreDueInvoice'])
+->name('electric-invoice-pre-due.print')->middleware('auth');
 
 
 

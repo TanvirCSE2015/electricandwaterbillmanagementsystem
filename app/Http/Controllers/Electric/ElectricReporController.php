@@ -86,6 +86,21 @@ class ElectricReporController extends Controller
             return view('reports.unpaid_electric_bills', compact('records','type','total','block_name'));
         }
 
+        if($type==='pre_due'){
+                $records = Customer::query()
+                    ->whereHas('previousDue', fn($q) => $q->where('is_paid', false))
+                    ->with('previousDue','block')
+                    ->when($customer_id, fn($q) => $q->where('id', $customer_id))
+                    ->when($blockId, fn($q) => $q->where('block_id', $blockId))
+                    ->get();
+    
+                $bock=Blocks::find($blockId);
+                $block_name= $bock ? $bock->bolck_name : null;
+    
+                $total = $records->sum(fn($cust) => $cust->previousDue->is_paid ? 0 : $cust->previousDue->amount);
+                return view('reports.unpaid_electric_bills', compact('records','type','total','block_name'));
+        }
+
          $records = ElectricBill::query()
             ->where('is_paid', false)
             ->with('customer')
@@ -146,6 +161,39 @@ class ElectricReporController extends Controller
 
         return view('reports.electric_laser', compact('records','customer_id','month','year','block_name'));
 
+    }
+
+    public function PrintElectricPreDueInvoice(Request $request){
+        date_default_timezone_set('Asia/Dhaka');
+        $date  =  $request->query('date');
+        $month = $request->query('month');
+        $year = $request->query('year');
+        $type = $request->query('type');
+        $blockId = $request->query('block_id');
+
+        $records = ElectricInvoice::when($date, function($query) use($date){
+                $query->where([ 'invoice_date'=> $date, 'due_type'=>'previous_due']);
+            })
+            ->when($month && $year , function($query) use($month,$year){
+                $query->where(['invoice_month' => $month, 'invoice_year' => $year, 'due_type'=>'previous_due'])
+                ->selectRaw('ROW_NUMBER() OVER() as id,
+                    invoice_date, invoice_month,invoice_month_name, invoice_year, SUM(total_amount) as total_amount')
+                ->groupByRaw('invoice_date');
+            })
+            ->when($blockId, fn($q) => $q->whereHas('customer', fn($q2) => $q2->where('block_id', $blockId)))
+            ->when($year , function($query) use($year){
+                $query->where(['invoice_year' => $year, 'due_type'=>'previous_due'])
+                    ->selectRaw('ROW_NUMBER() OVER() as id, invoice_month, SUM(total_amount) as total_amount,
+                    invoice_month_name, invoice_year');
+            })
+            ->with('customer')
+            ->get();
+        $bock=Blocks::find($blockId);
+        $block_name= $bock ? $bock->bolck_name : null;
+        $total = $records->sum('total_amount');
+
+
+        return view('reports.electric_pre_due_invoice', compact('records', 'date', 'total','type','month','year','block_name'));
     }
     
 }

@@ -116,7 +116,7 @@ class CustomIndex extends Page implements HasTable, HasForms
         return [
             TextColumn::make('customer.name')->label(__('fields.name'))->searchable()->sortable(),
             TextColumn::make('customer.shop_no')->label(__('fields.shop_no'))->searchable()->sortable(),
-            TextColumn::make('customer.meters.meter_number')->label(__('fields.meter_number'))->searchable()->sortable(),
+            TextColumn::make('customer.activeMeter.meter_number')->label(__('fields.meter_number'))->searchable()->sortable(),
             TextColumn::make('bill_month_name')->label(__('fields.billing_month'))
             ->formatStateUsing(fn ($state) => $this->en2bn($state))
             ->sortable(),
@@ -124,7 +124,16 @@ class CustomIndex extends Page implements HasTable, HasForms
             ->formatStateUsing(fn ($state) => $this->en2bn($state)),
             TextColumn::make('consumed_units')->label(__('fields.consume_unit'))->sortable()
             ->formatStateUsing(fn ($state) => $this->en2bn($state)),
-            TextColumn::make('total_amount')->label(__('fields.total_amount'))->sortable()
+            TextColumn::make('total_amount')->label(__('fields.total_amount'))
+            ->getStateUsing(function ($record) {
+                if($record->surcharge > 0){
+                    return $record->total_amount;
+                }else{
+                    $surcharge= \App\Helpers\ElectricBillHelper::calculateSurcharge($record);
+                    return $record->total_amount + $surcharge;
+                }
+            })
+            ->sortable()
             ->formatStateUsing(fn ($state) => $this->en2bn(number_format($state, 2))),
             IconColumn::make('is_paid')->label(__('fields.is_paid'))->boolean(),
         ];

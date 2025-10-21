@@ -38,7 +38,7 @@ class ListDueElectricBills extends ListRecords
             }], 'total_amount')
             ->with([
             // Load previous_due where unpaid
-            'previousDue' => fn($q) => $q->where('is_paid', false)
+            'previousDue' => fn($q) => $q->where('is_paid', false),
         ]);
     }
 }
