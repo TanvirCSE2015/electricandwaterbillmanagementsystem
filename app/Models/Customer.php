@@ -44,4 +44,9 @@ class Customer extends Model
     {
         return $this->belongsTo(Blocks::class);
     }
+
+    public function unpaidBills()
+    {
+        return $this->hasMany(ElectricBill::class)->where('is_paid', false);
+    }
 }

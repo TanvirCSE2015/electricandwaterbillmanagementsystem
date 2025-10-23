@@ -22,3 +22,5 @@ Route::get('/print-electric-invoice-pre-due',[ElectricReporController::class,'Pr
 
 Route::get('/print-electric-receipt', [ElectricReceiptController::class, 'PrintElectricReceipt'])
 ->name('electric-receipt.print');
+Route::get('/print-electric-bill-copy', [ElectricReceiptController::class, 'PrintElectricBillCopy'])
+->name('electric-bill-copy.print');

@@ -187,6 +187,18 @@ class CustomIndex extends Page implements HasTable, HasForms
         return [];
     }
 
+    protected function getTableHeaderActions(): array
+    {
+        return [
+            Action::make('print_bills')
+                ->label('বিল প্রিন্ট করুন')
+                 ->url(fn () => route('electric-bill-copy.print', ['month' => $this->month, 'year' => $this->year]))
+                ->color('primary')
+                ->icon('heroicon-o-printer')
+                ->openUrlInNewTab(),
+        ];
+    }
+
    protected function getHeaderActions(): array
    {
          return [
