@@ -27,15 +27,16 @@ class MeterReading extends Model
             
         // });
 
-        static::created(function ($reading) {
-            $setting = ElectricBillSetting::latest()->first();
-            if ($setting) {
-                ElectricBillingService::generateBill($reading, $setting, auth()->id());
-            }
-        });
+        // static::created(function ($reading) {
+        //     $setting = ElectricBillSetting::latest()->first();
+        //     if ($setting) {
+        //         ElectricBillingService::generateBill($reading, $setting, auth()->id());
+        //     }
+        // });
 
         static::updated(function ($reading) {
-            $setting = ElectricBillSetting::latest()->first();
+            $electric_bill_setting_id = $reading->bill?->electric_bill_setting_id;
+            $setting = ElectricBillSetting::find($electric_bill_setting_id);
             $nextReading = self::where('meter_id', $reading->meter_id)
                 ->where('reading_date', '>', $reading->reading_date)
                 ->orderBy('reading_date', 'asc')

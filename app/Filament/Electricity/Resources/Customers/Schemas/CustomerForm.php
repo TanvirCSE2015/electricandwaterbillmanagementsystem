@@ -22,17 +22,22 @@ class CustomerForm
                 TextInput::make('name')
                     ->label(__('fields.name'))
                     ->required()
-                    ->columnSpan(4),
+                    ->columnSpan(3),
                 TextInput::make('email')
                     ->label(__('fields.email'))
                     ->email()
                     ->default(null)
-                    ->columnSpan(4),
+                    ->columnSpan(3),
+                Select::make('electric_area_id')
+                    ->label(__('fields.area'))
+                    ->relationship('electricArea', 'name')
+                    ->required()
+                    ->columnSpan(3),
                 Select::make('block_id')
                     ->label(__('fields.block_name'))
                     ->relationship('block', 'bolck_name')
                     ->required()
-                    ->columnSpan(4),
+                    ->columnSpan(3),
                 TextInput::make('shop_no')
                     ->label(__('fields.shop_no'))
                     ->required()

@@ -10,6 +10,11 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Customer extends Model
 {
+
+    public function electricArea(): BelongsTo
+    {
+        return $this->belongsTo(ElectricArea::class);
+    }
     public function meters():HasMany
     {
         return $this->hasMany(Meter::class);

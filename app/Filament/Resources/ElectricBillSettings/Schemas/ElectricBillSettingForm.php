@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\ElectricBillSettings\Schemas;
 
 use Dom\Text;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Schema;
 
@@ -12,6 +13,10 @@ class ElectricBillSettingForm
     {
         return $schema
             ->components([
+                Select::make('electric_area_id')
+                    ->label(__('fields.area'))
+                    ->relationship('electricArea', 'name')
+                    ->required(),
                 TextInput::make('unit_price')
                     ->label(__('fields.unit_price'))
                     ->required()
@@ -48,6 +53,6 @@ class ElectricBillSettingForm
                     ->numeric()
                     ->suffix('%')
                     ->default(0),
-            ])->columns(3);
+            ])->columns(4);
     }
 }

@@ -1,6 +1,7 @@
 <?php
 return [
     'name' => 'নাম',
+    'area' => 'এলাকা',
     'block_name' => 'ব্লক নাম',
     'email' => 'ইমেইল',
     'password' => 'পাসওয়ার্ড',

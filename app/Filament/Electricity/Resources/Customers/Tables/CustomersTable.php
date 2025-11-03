@@ -2,6 +2,7 @@
 
 namespace App\Filament\Electricity\Resources\Customers\Tables;
 
+use Dom\Text;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -26,6 +27,14 @@ class CustomersTable
                 TextColumn::make('phone')
                     ->label(__('fields.phone'))
                     ->searchable(),
+                TextColumn::make('electricArea.name')
+                    ->label(__('fields.area'))
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('block.bolck_name')
+                    ->label(__('fields.block_name'))
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('address')
                     ->label(__('fields.address'))
                     ->searchable(),

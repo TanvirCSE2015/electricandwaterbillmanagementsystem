@@ -2,6 +2,7 @@
 
 namespace App\Filament\Electricity\Pages;
 
+use App\Models\ElectricArea;
 use App\Models\ElectricBill;
 use App\Models\ElectricBillSetting;
 use App\Models\Meter;
@@ -18,7 +19,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\TextInputColumn;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
-use Illuminate\Contracts\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 
 class Billgenerate extends Page implements HasForms, HasTable
@@ -36,6 +37,7 @@ class Billgenerate extends Page implements HasForms, HasTable
 
     public ?int $month = null;
     public ?int $year = null;
+    public ?int $area_id = null;
 
     public function en2bn($number): string
     {
@@ -53,6 +55,15 @@ class Billgenerate extends Page implements HasForms, HasTable
     {
         return [
             Grid::make(4)->schema([
+                Select::make('area_id')
+                    ->label(__('fields.area'))
+                    ->options(ElectricArea::pluck('name', 'id'))
+                    ->required()
+                    ->reactive()
+                    ->afterStateUpdated(function (callable $set) {
+                        $set('month', null);
+                        $this->resetTable();
+                    }),
                 Select::make('month')
                     ->label(__('fields.billing_month'))
                     ->options(function () {
@@ -75,6 +86,7 @@ class Billgenerate extends Page implements HasForms, HasTable
                         return array_slice($months, 0, $currentMonth - 1, true);
                     })
                     ->reactive()
+                    ->visible(fn () => $this->area_id !== null)
                     ->afterStateUpdated(fn () => $this->resetTable()),
 
                 Select::make('year')
@@ -88,6 +100,7 @@ class Billgenerate extends Page implements HasForms, HasTable
                         return $years;
                     })
                     ->reactive()
+                    ->visible(fn () => $this->area_id !== null)
                     ->afterStateUpdated(fn () => $this->resetTable()),
             ]),
         ];
@@ -99,7 +112,11 @@ class Billgenerate extends Page implements HasForms, HasTable
             return ElectricBill::query()->whereNull('id');
         }
 
-        $existing = ElectricBill::where('billing_month', $this->month)
+        $existing = ElectricBill::query()
+            ->whereHas('customer', function (Builder $query) {
+                $query->where('electric_area_id', $this->area_id);
+            })
+            ->where('billing_month', $this->month)
             ->where('billing_year', $this->year)
             ->exists();
 
@@ -108,6 +125,9 @@ class Billgenerate extends Page implements HasForms, HasTable
         }
 
         return ElectricBill::query()
+            ->whereHas('customer', function (Builder $query) {
+                $query->where('electric_area_id', $this->area_id);
+            })
             ->where('billing_month', $this->month)
             ->where('billing_year', $this->year);
     }
@@ -118,7 +138,10 @@ class Billgenerate extends Page implements HasForms, HasTable
     protected function generateBills(): void
     {
         DB::transaction(function () {
-            $activeMeters = Meter::where('status', 'active')->get();
+            $activeMeters = Meter::whereHas('customer', function (Builder $query) {
+                $query->where('electric_area_id', $this->area_id);
+            })
+            ->where('status', 'active')->get();
             $previousReading=0;
 
             foreach ($activeMeters as $meter) {
@@ -132,7 +155,7 @@ class Billgenerate extends Page implements HasForms, HasTable
                 //     $previousReading = $lastReading?->current_reading;
                 // }
                 $previousReading = $lastReading?->current_reading ?? $meter->current_reading;
-                $setting = ElectricBillSetting::query()->latest()->first();
+                $setting = ElectricBillSetting::query()->where('electric_area_id',$this->area_id)->latest()->first();
                 // Create a new meter reading
                 $reading = MeterReading::create([
                     'meter_id' => $meter->id,
@@ -141,6 +164,7 @@ class Billgenerate extends Page implements HasForms, HasTable
                     'current_reading' => 0,
                     'consume_unit' => 0,
                 ]);
+                ElectricBillingService::generateBill($reading, $setting, auth()->id());
             }
         });
     }
