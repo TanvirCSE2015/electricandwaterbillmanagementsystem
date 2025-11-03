@@ -199,7 +199,7 @@ class PreviousDueInvoiceReport extends Page implements HasTable, HasForms
                     invoice_month_name as month_name,
                     invoice_year as year
                 ')
-                ->groupByRaw('invoice_date');
+                ->groupByRaw('invoice_date,month,month_name,year');
         }
 
         if ($this->form->getState()['type'] === 'yearly' && $year) {
@@ -212,7 +212,7 @@ class PreviousDueInvoiceReport extends Page implements HasTable, HasForms
                 SUM(total_amount) as total_amount
             ')
             ->where(['invoice_year'=> $year, 'due_type'=>'previous_due'])
-            ->groupByRaw('invoice_month');
+            ->groupByRaw('invoice_month,invoice_year,invoice_month_name');
         }
 
         return $query;

@@ -31,13 +31,14 @@ class ElectricReporController extends Controller
                 $query->where(['invoice_month' => $month, 'invoice_year' => $year])
                 ->selectRaw('ROW_NUMBER() OVER() as id,
                     invoice_date, invoice_month,invoice_month_name, invoice_year, SUM(total_amount) as total_amount')
-                ->groupByRaw('invoice_date');
+                ->groupByRaw('invoice_date,invoice_month,invoice_month_name,invoice_year');
             })
             ->when($blockId, fn($q) => $q->whereHas('customer', fn($q2) => $q2->where('block_id', $blockId)))
             ->when($year , function($query) use($year){
                 $query->where(['invoice_year' => $year])
                     ->selectRaw('ROW_NUMBER() OVER() as id, invoice_month, SUM(total_amount) as total_amount,
-                    invoice_month_name, invoice_year');
+                    invoice_month_name, invoice_year')
+                    ->groupByRaw('invoice_month,invoice_year,invoice_month_name');
             })
             ->with('customer')
             ->get();
@@ -178,13 +179,14 @@ class ElectricReporController extends Controller
                 $query->where(['invoice_month' => $month, 'invoice_year' => $year, 'due_type'=>'previous_due'])
                 ->selectRaw('ROW_NUMBER() OVER() as id,
                     invoice_date, invoice_month,invoice_month_name, invoice_year, SUM(total_amount) as total_amount')
-                ->groupByRaw('invoice_date');
+                ->groupByRaw('invoice_date,invoice_month,invoice_month_name,invoice_year');
             })
             ->when($blockId, fn($q) => $q->whereHas('customer', fn($q2) => $q2->where('block_id', $blockId)))
             ->when($year , function($query) use($year){
                 $query->where(['invoice_year' => $year, 'due_type'=>'previous_due'])
                     ->selectRaw('ROW_NUMBER() OVER() as id, invoice_month, SUM(total_amount) as total_amount,
-                    invoice_month_name, invoice_year');
+                    invoice_month_name, invoice_year')
+                    ->groupByRaw('invoice_month,invoice_year,invoice_month_name');
             })
             ->with('customer')
             ->get();

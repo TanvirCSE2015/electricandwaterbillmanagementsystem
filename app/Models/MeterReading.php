@@ -40,6 +40,7 @@ class MeterReading extends Model
                 ->where('reading_date', '>', $reading->reading_date)
                 ->orderBy('reading_date', 'asc')
                 ->first();
+            // $nextReading=$reading;
             if ($nextReading) {
                 $nextReading->previous_reading = $reading->current_reading;
                 $nextReading->consume_unit = $nextReading->current_reading - $nextReading->previous_reading;

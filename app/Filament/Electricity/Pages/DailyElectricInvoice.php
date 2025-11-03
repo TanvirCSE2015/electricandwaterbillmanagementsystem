@@ -203,7 +203,7 @@ class DailyElectricInvoice extends Page implements HasForms, HasTable
                     invoice_month_name as month_name,
                     invoice_year as year
                 ')
-                ->groupByRaw('invoice_date');
+                ->groupByRaw('invoice_date,month,month_name,year');
         }
 
         if ($this->form->getState()['type'] === 'yearly' && $year) {
@@ -216,7 +216,7 @@ class DailyElectricInvoice extends Page implements HasForms, HasTable
                 SUM(total_amount) as total_amount
             ')
             ->where('invoice_year', $year)
-            ->groupByRaw('invoice_month');
+            ->groupByRaw('invoice_month,invoice_year,invoice_month_name');
         }
 
         return $query;

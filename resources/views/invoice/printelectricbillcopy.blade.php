@@ -11,7 +11,10 @@
       font-size: 10px;
       background: #fff;
     }
-
+    p {
+        margin-top: 0;
+        margin-bottom: .5rem!important;
+    }
     .bill-wrapper {
       max-width: 800px;
       margin: 0 auto 30px auto;
@@ -87,8 +90,8 @@
         <div class="text-center">
         <img src="images/logo.png" height="60px">
         <h5><strong>ঢাকা ক্যান্টনমেন্ট বোর্ড</strong></h5>
-        <h6><strong>পানি ও বিদ্যুৎ বিল</strong></h6>
-        <p><strong>গ্রাহক কপি</strong></p>
+        <h6><strong>বিদ্যুৎ বিল</strong></h6>
+        <p><strong>(গ্রাহক কপি)</strong></p>
         </div>
 
         <div class="row">
@@ -121,7 +124,7 @@
                 $base_amount=($record->reading->consume_unit + $record->billSetting->system_loss) * $record->billSetting->unit_price;
             @endphp
             <td rowspan="5" class="text-end">{{ $numto->bnNum($base_amount) }}</td>
-            <td rowspan="6">প্রস্তুতের তারিখঃ<br>{{ en2bn(date("d-m-Y", strtotime($record->bill_date))) }} ইং</td>
+            <td rowspan="6" style="font-size: 12px;"><strong>প্রস্তুতের তারিখঃ<br>{{ en2bn(date("d-m-Y", strtotime($record->bill_date))) }} ইং</strong></td>
             </tr>
             <tr>
                 <td>বিগত একক</td>
@@ -146,10 +149,10 @@
             <tr>
             <td>ডিমান্ড চার্জ</td>
             <td colspan="3" class="text-end">{{ $numto->bnNum($record->billSetting->demand_charge) }}</td>
-            <td rowspan="7">পরিশোধের শেষ তারিখঃ<br>{{ en2bn(date("d-m-Y", strtotime($record->due_date))) }} ইং</td>
+            <td rowspan="7" style="font-size: 12px;"><strong>পরিশোধের শেষ তারিখঃ<br>{{ en2bn(date("d-m-Y", strtotime($record->due_date))) }} ইং</strong></td>
             </tr>
             <tr>
-            <td>মূল্য সহায়তা সহ মোট টাকা উপর ৫%</td>
+            <td>মোট টাকা উপর ভ্যাট ৫%</td>
             
             <td colspan="3" class="text-end">{{ $numto->bnCommaLakh($record->total_amount)}}</td>
             </tr>
@@ -203,14 +206,19 @@
         <p class="mb-0">------------------------------</p>
         <p class="mb-0"><strong>উপ-সহকারী প্রকৌশলী</strong><br>(পানি ও বিদ্যুৎ)</p>
         </div>
+        <div class="text-center mt-3">
+            <p class="fw-bold" style="font-size: 12px;">
+                <strong>বিঃদ্রঃ দুই মাসের অধিক সময় বিল বকেয়া থাকলে বিদ্যুৎ সংযোগ বিচ্ছিন্ন করা হবে এবং এটি বিচ্ছিন্নকরণের চূড়ান্ত নোটিশ হিসাবে গণ্য হবে।</strong>
+            </p>
+        </div>
     </div>
 
     <!-- === Office Copy (part of same bill) === -->
-    <div class="bill-container">
+    <div class="bill-container" style="border-bottom: none!important">
         <div class="text-center">
         <h5 class="d-inline"><strong>ঢাকা ক্যান্টনমেন্ট বোর্ড</strong></h5>
-        <h6 class="d-inline"><strong>(পানি ও বিদ্যুৎ বিল)</strong></h6>
-        <p><strong>অফিস কপি</strong></p>
+        <h6 class="d-inline"><strong> (বিদ্যুৎ বিল)</strong></h6>
+        <p><strong>(অফিস কপি)</strong></p>
         </div>
 
         <div class="row">
@@ -228,7 +236,7 @@
         <thead>
             <tr>
             <th>মোট বকেয়া</th>
-            <th>আদায়ের বিবরন (বকেয়া/পূর্বের বকেয়া/কাস্টম)</th>
+            <th>আদায়ের বিবরন (বকেয়া/পূর্বের বকেয়া/অন্যান্য)</th> 
             <th>আদায়ের পরিমান</th>
             <th>আদায়কারীর স্বাক্ষর</th>
             </tr>
