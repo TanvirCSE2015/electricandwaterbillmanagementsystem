@@ -47,7 +47,7 @@ class ElectricBillingService
             'total_amount'             => round($totalAmount),
             'is_paid'                  => false,
             'due_date'                 => (function() use ($reading) {
-                $due = Carbon::parse($reading->reading_date)->addDays(11);
+                $due = Carbon::parse($reading->reading_date)->addDays(15);
                 if ($due->isFriday()) {
                     $due->addDays(2); // Fri -> Sun
                 } elseif ($due->isSaturday()) {
@@ -99,15 +99,7 @@ class ElectricBillingService
             'surcharge'                => round($surcharge),
             'vat'                      => round($vat),
             'total_amount'             => round($totalAmount),
-            'due_date'             => (function() use ($reading) {
-                $due = Carbon::parse($reading->reading_date)->addDays(15);
-                if ($due->isFriday()) {
-                    $due->addDays(2); // Fri -> Sun
-                } elseif ($due->isSaturday()) {
-                    $due->addDay(); // Sat -> Sun
-                }
-                return $due;
-            })(),
+            // 'due_date'             => Carbon::parse($reading->reading_date)->addDays(15),
         ]);
 
         return $bill;
