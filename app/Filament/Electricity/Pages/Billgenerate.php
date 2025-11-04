@@ -149,22 +149,22 @@ class Billgenerate extends Page implements HasForms, HasTable
                 $lastReading = MeterReading::where('meter_id', $meter->id)
                     ->latest('reading_date')
                     ->first();
-                // if(!$lastReading){
-                //     $previousReading=$meter->current_reading;
-                // }else{
-                //     $previousReading = $lastReading?->current_reading;
-                // }
-                $previousReading = $lastReading?->current_reading ?? $meter->current_reading;
+                if(!$lastReading){
+                    $previousReading=$meter->current_reading;
+                }else{
+                    $previousReading = $lastReading?->current_reading;
+                }
+                // $previousReading = $lastReading?->current_reading ?? $meter->current_reading;
                 $setting = ElectricBillSetting::query()->where('electric_area_id',$this->area_id)->latest()->first();
                 // Create a new meter reading
                 $reading = MeterReading::create([
                     'meter_id' => $meter->id,
-                    'reading_date' => Carbon::create($this->year, $this->month, 1),
+                    'reading_date' => Carbon::now(),
                     'previous_reading' => $previousReading,
                     'current_reading' => 0,
                     'consume_unit' => 0,
                 ]);
-                ElectricBillingService::generateBill($reading, $setting, auth()->id());
+                ElectricBillingService::generateBill($reading, $setting, auth()->id(),$this->month);
             }
         });
     }

@@ -23,7 +23,7 @@ class PreviousDueInvoiceReport extends Page implements HasTable, HasForms
     use InteractsWithTable , InteractsWithForms;
     protected string $view = 'filament.electricity.pages.previous-due-invoice-report';
 
-    protected static ?string $navigationLabel = 'পূর্বের বকেয়া আদাইয়ের রিপোর্ট';
+    protected static ?string $navigationLabel = 'পূর্বের বকেয়া আদায়ের রিপোর্ট';
 
     protected static string | UnitEnum | null $navigationGroup = 'রিপোর্ট সমূহ';
 
@@ -32,7 +32,7 @@ class PreviousDueInvoiceReport extends Page implements HasTable, HasForms
 
     public function getTitle(): string
     {
-        return 'পূর্বের বকেয়া আদাইয়ের রিপোর্ট';
+        return 'পূর্বের বকেয়া আদায়ের রিপোর্ট';
     }
 
     public function en2bn($number): string

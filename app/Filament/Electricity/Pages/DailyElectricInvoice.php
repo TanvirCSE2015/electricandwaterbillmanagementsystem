@@ -27,7 +27,7 @@ class DailyElectricInvoice extends Page implements HasForms, HasTable
     use InteractsWithForms, InteractsWithTable;
     protected string $view = 'filament.electricity.pages.daily-electric-invoice';
 
-    protected static ?string $navigationLabel = 'বকেয়া আদাইয়ের রিপোর্ট';
+    protected static ?string $navigationLabel = 'আদায়ের রিপোর্ট';
 
     protected static string | UnitEnum | null $navigationGroup = 'রিপোর্ট সমূহ';
     
@@ -59,7 +59,7 @@ class DailyElectricInvoice extends Page implements HasForms, HasTable
 
     public function getTitle(): string
     {
-        return 'বকেয়া আদাইয়ের রিপোর্ট';
+        return 'আদায়ের রিপোর্ট';
     }
 
     protected function getFormSchema(): array
