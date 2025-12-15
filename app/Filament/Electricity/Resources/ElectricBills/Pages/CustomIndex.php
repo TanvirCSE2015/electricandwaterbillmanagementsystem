@@ -3,6 +3,7 @@
 namespace App\Filament\Electricity\Resources\ElectricBills\Pages;
 
 use App\Filament\Electricity\Resources\ElectricBills\ElectricBillResource;
+use App\Models\ElectricArea;
 use App\Models\ElectricBillSetting;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Select;
@@ -16,6 +17,7 @@ use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
+use Illuminate\Database\Eloquent\Builder;
 
 class CustomIndex extends Page implements HasTable, HasForms
 {
@@ -39,6 +41,7 @@ class CustomIndex extends Page implements HasTable, HasForms
 
     public ?int $month=null;
     public ?int $year=null;
+    public ?int $area_id=null;
     public function mount(): void
     {
         $this->month = date('m')-1;
@@ -48,6 +51,11 @@ class CustomIndex extends Page implements HasTable, HasForms
     {
         return [
             Grid::make(4)->schema([
+                Select::make('area_id')
+                    ->label(__('fields.area'))
+                    ->options(ElectricArea::all()->pluck('name','id'))
+                    ->reactive()
+                    ->afterStateUpdated(fn()=>$this->resetTable()),
                 Select::make('month')
                 ->label(__('fields.billing_month'))
                 ->options(function () {
@@ -71,7 +79,8 @@ class CustomIndex extends Page implements HasTable, HasForms
                 })
                 ->reactive()
                 ->afterStateUpdated(fn ()=> $this->resetTable())
-                ->required(),
+                ->required()
+                ->visible(fn () => $this->area_id !== null),
             Select::make('year')
                 ->label(__('fields.billing_year'))
                 ->options(function () {
@@ -82,7 +91,8 @@ class CustomIndex extends Page implements HasTable, HasForms
                     }
                     return $years;
                 })
-                ->required(),
+                ->required()
+                ->visible(fn () => $this->area_id !== null),
             ]),
         ];
     }
@@ -108,7 +118,11 @@ class CustomIndex extends Page implements HasTable, HasForms
     // });
 
     // return $query;
-        return \App\Models\ElectricBill::query()->where(['billing_month'=> $this->month,'billing_year'=> $this->year]);
+        return \App\Models\ElectricBill::query()
+        ->whereHas('customer', function (Builder $query) {
+                $query->where('electric_area_id', $this->area_id);
+        })
+        ->where(['billing_month'=> $this->month,'billing_year'=> $this->year]);
     }
 
     protected function getTableColumns(): array
@@ -192,7 +206,11 @@ class CustomIndex extends Page implements HasTable, HasForms
         return [
             Action::make('print_bills')
                 ->label('বিল প্রিন্ট করুন')
-                 ->url(fn () => route('electric-bill-copy.print', ['month' => $this->month, 'year' => $this->year]))
+                 ->url(fn () => route('electric-bill-copy.print', [
+                    'month' => $this->month, 
+                    'year' => $this->year,
+                    'area_id'=>$this->area_id,
+                    ]))
                 ->color('primary')
                 ->icon('heroicon-o-printer')
                 ->openUrlInNewTab(),

@@ -16,6 +16,7 @@ return new class extends Migration
             $table->foreignId('customer_id')->constrained()->cascadeOnDelete();
             $table->string('meter_number')->charset('utf8mb4')->collation('utf8mb4_unicode_ci')->unique();
             $table->enum('status', ['active', 'destroyed','replaced','inactive'])->default('active');
+            $table->bigInteger('current_reading');
             $table->date('install_at')->nullable();
             $table->date('uninstall_at')->nullable();
             $table->text('remarks')->nullable()->charset('utf8mb4')->collation('utf8mb4_unicode_ci');

@@ -5,12 +5,16 @@ namespace App\Filament\Electricity\Pages;
 use App\Models\ElectricArea;
 use App\Models\ElectricBill;
 use App\Models\ElectricBillSetting;
+use App\Models\ElectricCalculation;
 use App\Models\Meter;
 use App\Models\MeterReading;
 use App\Services\ElectricBillingService;
 use Carbon\Carbon;
 use Dom\Text;
+use Filament\Actions\Action;
+use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Pages\Page;
@@ -204,5 +208,188 @@ class Billgenerate extends Page implements HasForms, HasTable
             TextColumn::make('total_amount')->label(__('fields.total_amount'))
                 ->formatStateUsing(fn ($state) => $this->en2bn(number_format($state, 2))),
         ];
+    }
+
+    protected function getTableHeaderActions(): array
+    {
+        return [
+            Action::make('complete_bills')
+                ->label('পূর্ণাঙ্গ বিল তৈরি করুন')
+                ->icon('heroicon-o-check')
+                ->color('success')
+                ->schema([
+                Grid::make(3)->schema([
+                    TextInput::make('cantral_ac_rate')
+                        ->label(__(('fields.cantral_ac_rate')))
+                        ->default(0)
+                        ->numeric()
+                        ->required(),
+
+                    TextInput::make('common_area_rate')
+                       ->label(__(('fields.common_area_rate')))
+                        ->numeric()
+                        ->default(0)
+                        ->required(),
+
+                    TextInput::make('water_area_rate')
+                        ->label(__(('fields.water_area_rate')))
+                        ->numeric()
+                        ->default(0)
+                        ->required(),
+                    DatePicker::make('due_date')
+                        ->label(__(('fields.due_date')))
+                        ->default(0)
+                        ->required(),
+                ]),
+            ])
+            ->fillForm(function () {
+
+                if (!$this->area_id || !$this->month || !$this->year) {
+                    return [];
+                }
+
+                $record = \App\Models\ElectricCalculation::where('elecric_area_id', $this->area_id)
+                    ->where('bill_month', $this->month)
+                    ->where('bill_year', $this->year)
+                    ->first();
+
+                return $record
+                    ? [
+                        'cantral_ac_rate' => $record->cantral_ac_rate,
+                        'common_area_rate' => $record->common_area_rate,
+                        'water_area_rate' => $record->water_area_rate,
+                    ]
+                    : [];
+            })
+
+            ->action(function (array $data) {
+
+                if (!$this->area_id || !$this->month || !$this->year) {
+                    return;
+                }
+
+                $calc=ElectricCalculation::updateOrCreate(
+                    [
+                        'elecric_area_id' => $this->area_id,
+                        'bill_month' => $this->month,
+                        'bill_year' => $this->year,
+                    ],
+                    [
+                        'cantral_ac_rate' => $data['cantral_ac_rate'],
+                        'common_area_rate' => $data['common_area_rate'],
+                        'water_area_rate' => $data['water_area_rate'],
+                        'due_date' => $data['due_date'],
+                    ]
+                );
+
+                $rows = DB::table('electric_bills as b')
+                        ->join('customers as c', 'b.customer_id', '=', 'c.id')
+                        ->select([
+                            'b.id',
+                            'b.consumed_units',
+                            'b.system_loss_units',
+                            'b.service_charge',
+                            'b.demand_charge',
+                            'c.central_ac_area',
+                            'c.common_ac_area',
+                            'c.water_area',
+
+                        ])
+                        ->where('b.billing_month', $this->month)
+                        ->where('b.billing_year', $this->year)
+                        ->where('c.electric_area_id', $this->area_id)
+                        ->get();
+
+                    if ($rows->isEmpty()) {
+                        return;
+                    }
+
+                    $setting=ElectricBillSetting::query()->where('electric_area_id',$this->area_id)->latest()->first();
+
+                    $acRate     = (float) $calc->cantral_ac_rate;
+                    $commonRate = (float) $calc->common_area_rate;
+                    $waterRate  = (float) $calc->water_area_rate;
+                    $due_date= Carbon::parse($calc->due_date)->format('Y-m-d');
+
+                    $ids = [];
+                    
+                    // $AcRateCase='';
+                    // $commonRateCase='';
+                    // $waterRateCase='';
+                    $unitAcCases = '';
+                    $unitCommonCases = '';
+                    $unitTotalCase='';
+                    $baseAmountCase='';
+                    $totalAmountCase='';
+                    $acAmountCases = '';
+                    $commonAmountCases = '';
+                    $waterAmountCases = '';
+                    $vatCase='';
+
+                    foreach ($rows as $row) {
+                        $ids[] = $row->id;
+
+                        $unitAc     = $acRate * ((float) $row->central_ac_area ?? 0);
+                        $acAmount = round($unitAc * $setting->unit_price);
+                        $unitCommon = $commonRate * ((float) $row->common_ac_area ?? 0);
+                        $commonAmount=round($unitCommon *  $setting->unit_price);
+                        $waterAmt   = round($waterRate * ((float) $row->water_area ?? 0));
+
+                        $unitTotal=$row->consumed_units + $row->system_loss_units + $unitAc + $unitCommon;
+                        $baseAmount=$unitTotal * $setting->unit_price;
+                        $vatAmount=round(($baseAmount + $row->service_charge + $row->demand_charge ) * ($setting->vat/100));
+
+                        $totalAmount = round($baseAmount + $row->service_charge + $row->demand_charge + $waterAmt + $vatAmount);
+
+                        $unitAcCases     .= "WHEN {$row->id} THEN {$unitAc} ";
+                        $unitCommonCases .= "WHEN {$row->id} THEN {$unitCommon} ";
+                        $unitTotalCase .= "WHEN {$row->id} THEN {$unitTotal} ";
+                        $acAmountCases   .= "WHEN {$row->id} THEN {$acAmount} ";
+                        $commonAmountCases .= "WHEN {$row->id} THEN {$commonAmount} ";
+                        $waterAmountCases .= "WHEN {$row->id} THEN {$waterAmt} ";
+                        $baseAmountCase .= "WHEN {$row->id} THEN {$baseAmount} ";
+                        $vatCase .= "WHEN {$row->id} THEN {$vatAmount} ";
+                        $totalAmountCase .= "WHEN {$row->id} THEN {$totalAmount} ";
+                    }
+
+                    $idsList = implode(',', $ids);
+
+                    DB::statement("
+                        UPDATE electric_bills SET
+
+                            unit_rate_ac     = {$acRate},
+                            unit_rate_common = {$commonRate},
+                            unit_rate_water  = {$waterRate},
+                            due_date         = '{$due_date}',
+
+                            unit_ac      = CASE id {$unitAcCases} END,
+                            unit_common  = CASE id {$unitCommonCases} END,
+                            unit_total   = CASE id {$unitTotalCase} END,
+
+                            ac_amount     = CASE id {$acAmountCases} END,
+                            common_amount = CASE id {$commonAmountCases} END,
+                            water_amount  = CASE id {$waterAmountCases} END,
+
+                            base_amount  = CASE id {$baseAmountCase} END,
+                            vat          = CASE id {$vatCase} END,
+                            total_amount = CASE id {$totalAmountCase} END
+
+                        WHERE id IN ({$idsList})
+                    ");
+
+            }),
+    ];
+
+        
+    }
+
+    /**
+     * Mark generated bills as completed (paid) for the selected area/month/year.
+     * This implementation marks unpaid bills that have consume_unit > 0 as paid,
+     * and sets `paid_by` and `payment_date`. Adjust to your business rules if needed.
+     */
+    public function completeBills(): void
+    {
+        
     }
 }

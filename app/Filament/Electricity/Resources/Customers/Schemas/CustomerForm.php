@@ -2,6 +2,7 @@
 
 namespace App\Filament\Electricity\Resources\Customers\Schemas;
 
+use App\Helpers\ElectricBillHelper;
 use Dom\Text;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Repeater;
@@ -15,6 +16,7 @@ use Filament\Schemas\Schema;
 
 class CustomerForm
 {
+
     public static function configure(Schema $schema): Schema
     {
         return $schema
@@ -51,6 +53,35 @@ class CustomerForm
                     ->required()
                     ->default(null)
                     ->columnSpan(6),
+                Section::make('দোকানের বিশদ বিবরণ')
+                    ->schema([
+                        TextInput::make('shop_area')
+                            ->label(__('fields.shop_area'))
+                            ->default(0)
+                            ->required()
+                            ->formatStateUsing(fn($state)=>ElectricBillHelper::en2bn($state))
+                            ->dehydrateStateUsing(fn($state)=>ElectricBillHelper::bn2en($state)),
+                        TextInput::make('central_ac_area')
+                            ->label(__('fields.central_ac_area'))
+                            ->default(0)
+                            ->required()
+                            ->formatStateUsing(fn($state)=>ElectricBillHelper::en2bn($state))
+                            ->dehydrateStateUsing(fn($state)=>ElectricBillHelper::bn2en($state)),
+                        TextInput::make('common_ac_area')
+                            ->label(__('fields.common_ac_area'))
+                            ->default(0)
+                            ->required()
+                            ->formatStateUsing(fn($state)=>ElectricBillHelper::en2bn($state))
+                            ->dehydrateStateUsing(fn($state)=>ElectricBillHelper::bn2en($state)),
+                        TextInput::make('water_area')
+                            ->label(__('fields.water_area'))
+                            ->default(0)
+                            ->required()
+                            ->formatStateUsing(fn($state)=>ElectricBillHelper::en2bn($state))
+                            ->dehydrateStateUsing(fn($state)=>ElectricBillHelper::bn2en($state)),
+                    ])
+                    ->columns(4)
+                    ->columnSpanFull(),
                 Section::make('গ্রাহকের পূর্বের বকেয়া')
                     ->schema([
                         
@@ -62,7 +93,8 @@ class CustomerForm
                                 ->numeric()
                                 ->default(0)
                                 ->required()
-                                ->columnSpan(6),
+                                ->columnSpan(6)
+                                ,
                             Select::make('is_paid')
                                 ->label('বকেয়া পরিশোধিত')
                                 ->options([
@@ -92,7 +124,9 @@ class CustomerForm
                                 TextInput::make('meter_number')
                                     ->label(__('fields.meter_number'))
                                     ->unique()
-                                    ->required(),
+                                    ->required()
+                                    ->formatStateUsing(fn($state)=>ElectricBillHelper::en2bn($state))
+                                    ->dehydrateStateUsing(fn($state)=>ElectricBillHelper::bn2en($state)),
                                 Select::make('status')
                                     ->label(__('fields.status'))
                                     ->options([
@@ -113,7 +147,9 @@ class CustomerForm
                                     ->placeholder('যদি থাকে')
                                     ->nullable(),
                                 TextInput::make('current_reading')
-                                    ->label(__('fields.current_reading')),
+                                    ->label(__('fields.current_reading'))
+                                    ->formatStateUsing(fn($state)=>ElectricBillHelper::en2bn($state))
+                                    ->dehydrateStateUsing(fn($state)=>ElectricBillHelper::bn2en($state)),
                                 RichEditor::make('remarks')
                                     ->label('মন্তব্য')
                                     ->placeholder('এখানে নোট লিখুন...')

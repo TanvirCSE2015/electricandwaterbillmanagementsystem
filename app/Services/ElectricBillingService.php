@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\MeterReading;
 use App\Models\ElectricBill;
 use App\Models\ElectricBillSetting;
+use App\Models\ElectricCalculation;
 use DateTime;
 use Illuminate\Support\Carbon;
 
@@ -14,15 +15,14 @@ class ElectricBillingService
     public static function generateBill(MeterReading $reading, ElectricBillSetting $setting, int $userId, int $month): ElectricBill
     {
         $consumedUnits = $reading->consume_unit;
-
-        $baseAmount = $consumedUnits * $setting->unit_price;
+        $total_unit=$consumedUnits + $setting->system_loss;
+        $baseAmount = $total_unit * $setting->unit_price;
         $systemLossAmount = $setting->system_loss * $setting->unit_price;
 
         $surcharge = 0; // surcharge is applied later if unpaid
-        $vat = ($baseAmount + $setting->demand_charge + $systemLossAmount + $setting->service_charge) * ($setting->vat / 100);
+        $vat = ($baseAmount + $setting->demand_charge  + $setting->service_charge) * ($setting->vat / 100);
 
         $totalAmount = $baseAmount
-            + $systemLossAmount
             + $setting->demand_charge
             + $setting->service_charge
             + $surcharge
@@ -37,7 +37,9 @@ class ElectricBillingService
             'billing_year'             => $reading->reading_date->year,
             'bill_month_name'          =>  DateTime::createFromFormat('!m', $month)->format('F'),
             'consumed_units'           => $consumedUnits,
-            'system_loss_units'        => $systemLossAmount,
+            'system_loss_units'        => $setting->system_loss,
+            'system_loss_amount'       => $systemLossAmount,
+            'unit_total'               => $total_unit,
             'base_amount'              => $baseAmount,
             'demand_charge'            => $setting->demand_charge,
             'service_charge'           => $setting->service_charge,
@@ -68,22 +70,18 @@ class ElectricBillingService
             // If bill does not exist yet, create one instead
             return self::generateBill($reading, $setting, $userId, $reading->reading_date->month);
         }
-
+       
         $consumedUnits    = $reading->consume_unit < 0 ? 0 : $reading->consume_unit;
-        $baseAmount       = $consumedUnits * $setting->unit_price;
+        $total_unit=$consumedUnits + $setting->system_loss + $bill->unit_ac +   $bill->unit_common;
+        $baseAmount       = $total_unit * $setting->unit_price;
         $systemLossAmount = $setting->system_loss * $setting->unit_price;
 
-        $surcharge = round($bill->surcharge); // keep previous surcharge, recalc later if unpaid
-        $vat = ($baseAmount + $setting->demand_charge + $systemLossAmount + $setting->service_charge)
+        $surcharge = $bill->surcharge; // keep previous surcharge, recalc later if unpaid
+        $vat = ($baseAmount + $setting->demand_charge  + $setting->service_charge)
             * ($setting->vat / 100);
 
-        $totalAmount = $baseAmount
-            + $systemLossAmount
-            + $setting->demand_charge
-            + $setting->service_charge
-            + $surcharge
-            + round($vat);
-
+        $totalAmount = $baseAmount + $setting->demand_charge  + $setting->service_charge + $bill->water_amount + $vat;
+       // dd($baseAmount);
         $bill->update([
             'customer_id'              => $reading->meter->customer_id,
             'electric_bill_setting_id' => $setting->id,
@@ -92,7 +90,9 @@ class ElectricBillingService
             // 'billing_year'             => $reading->reading_date->year,
             // 'bill_month_name'          => $reading->reading_date->format('F'),
             'consumed_units'           => $consumedUnits,
-            'system_loss_units'        => $systemLossAmount,
+            'system_loss_units'        => $setting->system_loss,
+            'system_loss_amount'       => $systemLossAmount,
+            'unit_total'               => $total_unit,
             'base_amount'              => $baseAmount,
             'demand_charge'            => $setting->demand_charge,
             'service_charge'           => $setting->service_charge,

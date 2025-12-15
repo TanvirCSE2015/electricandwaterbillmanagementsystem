@@ -13,7 +13,11 @@
     }
     p {
         margin-top: 0;
-        margin-bottom: .5rem!important;
+        margin-bottom: .3rem!important;
+    }
+
+    .h-tag{
+         margin-bottom: .3rem!important;
     }
     .bill-wrapper {
       max-width: 800px;
@@ -25,7 +29,7 @@
     }
 
     .bill-container {
-      padding: 20px;
+      padding: 15px 20px 15px 20px;
       border-bottom: 1px dashed #000; /* dashed separator between copies */
     }
 
@@ -89,19 +93,32 @@
     <div class="bill-container">
         <div class="text-center">
         <img src="images/logo.png" height="60px">
-        <h5><strong>ঢাকা ক্যান্টনমেন্ট বোর্ড</strong></h5>
-        <h6><strong>বিদ্যুৎ বিল</strong></h6>
+        <h5 class="h-tag"><strong>ঢাকা ক্যান্টনমেন্ট বোর্ড</strong></h5>
+        <h6 class="h-tag"><strong>বিদ্যুৎ বিল</strong></h6>
         <p><strong>(গ্রাহক কপি)</strong></p>
         </div>
 
-        <div class="row">
+        <div class="row mt-0">
         <div class="col-6">
             <p>জনাব/জনাবা: <strong>{{ $record->customer->name }}</strong></p>
             <p>ঠিকানা: <strong>{{ $record->customer->address }}</strong></p>
-        </div>
-        <div class="col-6 text-end">
             <p>বাড়ি/দোকান নম্বর: <strong>{{ $record->customer->shop_no }}</strong></p>
             <p>মিটার নম্বর: <strong>{{ $record->customer->activeMeter->meter_number }}</strong></p>
+        </div>
+        <div class="col-6 d-flex flex-column align-items-end justify-content-end text-end">
+            @if ($record->customer->shop_area >0)
+                <p>দোকানের আয়তন: <strong>{{ en2bn($record->customer->shop_area) }} বর্গফুট</strong></p>
+            @endif
+            @if ($record->customer->central_ac_area >0)
+                <p>সেন্ট্রাল-এসি আয়তন: <strong>{{ en2bn($record->customer->central_ac_area) }} বর্গফুট</strong></p>
+            @endif
+            @if ($record->customer->common_ac_area >0)
+                 <p>কমন-ইউজ আয়তন: <strong>{{ en2bn($record->customer->common_ac_area) }} বর্গফুট</strong></p>
+            @endif
+            @if ($record->customer->water_area >0)
+                 <p>পানির জন্য আয়ত: <strong>{{ en2bn($record->customer->water_area) }} বর্গফুট</strong></p>
+            @endif 
+           
         </div>
         </div>
 
@@ -119,12 +136,12 @@
             <tr>
             <td>বর্তমান একক</td>
             <td>{{ $numto->bnNum($record->reading->current_reading) }}</td>
-            <td rowspan="5">{{ $numto->bnNum($record->billSetting->unit_price) }}</td>
+            <td rowspan="{{ $record->ac_amount>0 || $record->common_amount>0 ? $record->system_loss_units<=0 ? 6 :7 : 5}}">{{ $numto->bnNum($record->billSetting->unit_price) }}</td>
             @php
-                $base_amount=($record->reading->consume_unit + $record->billSetting->system_loss) * $record->billSetting->unit_price;
+                $base_amount=($record->base_amount);
             @endphp
-            <td rowspan="5" class="text-end">{{ $numto->bnNum($base_amount) }}</td>
-            <td rowspan="6" style="font-size: 12px;"><strong>প্রস্তুতের তারিখঃ<br>{{ en2bn(date("d-m-Y", strtotime($record->bill_date))) }} ইং</strong></td>
+            <td rowspan="{{ $record->ac_amount>0 || $record->common_amount>0 ? $record->system_loss_units<=0 ? 6 :7 : 5}}" class="text-end">{{ $numto->bnNum($base_amount) }}</td>
+            <td rowspan="{{ $record->ac_amount>0 || $record->common_amount>0 ? $record->system_loss_units>0 ? 9 : 8 : 7}}" style="font-size: 12px;"><strong>প্রস্তুতের তারিখঃ<br>{{ en2bn(date("d-m-Y", strtotime($record->bill_date))) }} ইং</strong></td>
             </tr>
             <tr>
                 <td>বিগত একক</td>
@@ -134,27 +151,61 @@
                 <td>প্রাপ্ত খরচ</td>
                 <td>{{ $numto->bnNum($record->reading->consume_unit) }}</td>
             </tr>
+            @if ($record->unit_ac>0)
+            <tr>
+                <td>সেন্ট্রাল এসি  ({{ $numto->bnNum($calculaton->cantral_ac_rate) }}) </td>
+                <td>{{ $numto->bnNum($record->unit_ac) }}</td>
+            </tr>
+            @endif
+            @if ($record->unit_common>0)
+             <tr>
+                <td>কমন এসি ({{ $numto->bnNum($calculaton->common_area_rate) }})</td>
+                <td>{{ $numto->bnNum($record->unit_common) }}</td>
+            </tr>
+            @endif
+            @if ($record->system_loss_units>0)
             <tr>
                 <td>সিস্টেম লস</td>
                 <td>{{ $numto->bnNum($record->billSetting->system_loss) }}</td>
-            </tr>
+            </tr> 
+            @endif
+             
             <tr>
                 <td>মোট</td>
-                <td>{{ $numto->bnNum($record->reading->consume_unit +$record->billSetting->system_loss) }}</td>
+                <td>{{ $numto->bnNum($record->reading->consume_unit +$record->billSetting->system_loss + $record->unit_ac + $record->unit_common) }}</td>
             </tr>
+
+           
             <tr>
             <td>সার্ভিস চার্জ</td>
             <td colspan="3" class="text-end">{{ $numto->bnNum($record->billSetting->service_charge) }}</td>
+           
+           
             </tr>
             <tr>
             <td>ডিমান্ড চার্জ</td>
-            <td colspan="3" class="text-end">{{ $numto->bnNum($record->billSetting->demand_charge) }}</td>
-            <td rowspan="7" style="font-size: 12px;"><strong>পরিশোধের শেষ তারিখঃ<br>{{ en2bn(date("d-m-Y", strtotime($record->due_date))) }} ইং</strong></td>
+                <td colspan="3" class="text-end">{{ $numto->bnNum($record->billSetting->demand_charge) }}</td>
+            </tr>
+            <tr>
+                <td>মোট </td>
+            
+                <td colspan="3" class="text-end">{{ $numto->bnCommaLakh($record->base_amount + $record->demand_charge +$record->service_charge )}}</td>
+                   <td rowspan="{{ $record->water_amount>0 ? 9 : 8 }}" style="font-size: 12px;"><strong>পরিশোধের শেষ তারিখঃ<br>{{ en2bn(date("d-m-Y", strtotime($record->due_date))) }} ইং</strong></td>
             </tr>
             <tr>
             <td>মোট টাকা উপর ভ্যাট ৫%</td>
             
-            <td colspan="3" class="text-end">{{ $numto->bnCommaLakh($record->total_amount)}}</td>
+            <td colspan="3" class="text-end">{{ $numto->bnCommaLakh($record->vat)}}</td>
+            </tr>
+             @if ($record->water_amount>0)
+            <tr>
+            <td>পানির চার্জ ({{ $numto->bnNum($calculaton->water_area_rate) }})</td>
+            <td colspan="3" class="text-end">{{ $numto->bnNum($record->water_amount) }}</td>
+            </tr>
+            @endif
+            <tr>
+            <td>বর্তমান মসের বিল</td>
+            <td colspan="3" class="text-end">{{ $numto->bnNum($record->total_amount) }}</td>
             </tr>
             <tr>
             <td colspan="4"><strong>বকেয়া বিল</strong></td>
@@ -168,14 +219,20 @@
                 
                     @foreach ($unpaidBills as $unpaid)
                         @php
-                            $unpaidAmount=$unpaid->surcharge > 0 ? 
+                            if (\Carbon\Carbon::parse($unpaid->due_date)->lt(today())) {
+                               $unpaidAmount=$unpaid->surcharge > 0 ? 
                             $unpaid->total_amount : $unpaid->total_amount +
                                 (round($unpaid->total_amount * $unpaid->surcharge_percentage));
                             $unpaidTotal += $unpaidAmount;
+                            }
+                            
                         @endphp
+                        @if ( \Carbon\Carbon::parse($unpaid->due_date)->lt(today()))
                         <div class="col">{{ en2bn($unpaid->bill_month_name . '-' . $unpaid->billing_year)}}<br>
                             {{ $numto->bnCommaLakh($unpaidAmount) .'/=' }}
                         </div>
+                        @endif
+                       
                         {{-- <div class="col">জুলাই-২০২৫<br>১৫০০</div>
                         <div class="col">আগস্ট-২০২৫<br>১৮০০</div> --}}
                     @endforeach
@@ -184,11 +241,11 @@
             </td>
             <td class="text-end">{{ $numto->bnCommaLakh($unpaidTotal) }}</td>
             </tr>
-            <tr><td>পূর্বের বকেয়া</td><td class="text-end" colspan="3">{{ $numto->bnCommaLakh($record->customer->previousDue->amount) }}</td></tr>
+            <tr><td>পূর্বের বকেয়া</td><td class="text-end" colspan="3">{{ $numto->bnCommaLakh(round($record->customer->previousDue->amount)) }}</td></tr>
             <tr>
                 <td>মোট বিল</td>
-                <td class="text-end" colspan="3">{{ $numto->bnCommaLakh($record->total_amount+$unpaidTotal+
-                    $record->customer->previousDue->amount)}}
+                <td class="text-end" colspan="3">{{ $numto->bnCommaLakh($unpaidTotal+
+                    $record->customer->previousDue->amount + $record->total_amount)}}
                 </td>
             </tr>
             @php
