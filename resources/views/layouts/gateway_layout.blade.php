@@ -4,8 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <favicon href="{{ asset('images/favicon.png') }}" type="image/x-icon"/>
-
+    <link rel="icon" type="image/png" href="{{ asset('images/favicon.png') }}">
     <title>পানি ও বিদ্যুৎ বিল</title>
 
     <link rel="stylesheet" href="{{ asset('css/bootstrap/css/bootstrap.min.css') }}">

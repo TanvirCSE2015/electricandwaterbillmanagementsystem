@@ -4,7 +4,7 @@ use App\Http\Controllers\Electric\ElectricReceiptController;
 use App\Http\Controllers\Electric\ElectricReporController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
+Route::get('/gateway', function () {
     return view('gateway');
 });
 
@@ -24,3 +24,16 @@ Route::get('/print-electric-receipt', [ElectricReceiptController::class, 'PrintE
 ->name('electric-receipt.print');
 Route::get('/print-electric-bill-copy', [ElectricReceiptController::class, 'PrintElectricBillCopy'])
 ->name('electric-bill-copy.print');
+
+// home
+Route::get('/', function () {
+    return view('home');
+});
+
+// bill pay
+Route::get('/electric-bill', function () {
+    return view('pay_bill.electric_bill');
+})->name('electic-bill');
+Route::get('/water-bill', function () {
+    return view('pay_bill.water_bill');
+})->name('water-bill');
