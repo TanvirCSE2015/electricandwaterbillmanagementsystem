@@ -95,7 +95,7 @@
                                 <i class="fas fa-tint fa-3x"></i>
                             </div>
                             <h4 class="fw-bold mb-3"></h4>
-                            <a href="" class="btn btn-primary btn-lg w-100 rounded-pill shadow-sm">
+                            <a href="{{ url('/water/login') }}" class="btn btn-primary btn-lg w-100 rounded-pill shadow-sm">
                                 পানি বিল
                             </a>
                         </div>
