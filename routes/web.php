@@ -1,8 +1,9 @@
 <?php
 
-use App\Http\Controllers\Electric\ElectricReceiptController;
-use App\Http\Controllers\Electric\ElectricReporController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Electric\ElectricBillController;
+use App\Http\Controllers\Electric\ElectricReporController;
+use App\Http\Controllers\Electric\ElectricReceiptController;
 
 Route::get('/gateway', function () {
     return view('gateway');
@@ -37,3 +38,6 @@ Route::get('/electric-bill', function () {
 Route::get('/water-bill', function () {
     return view('pay_bill.water_bill');
 })->name('water-bill');
+
+// Electric bill search
+Route::get('/electric-bill/search', [ElectricBillController::class, 'search'])->name('electric.bill.search');

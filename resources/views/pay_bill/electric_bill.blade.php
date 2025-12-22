@@ -24,10 +24,17 @@
                 <div class="row justify-content-center">
                     <div class="col-md-8">
                         <div class="mb-3">
-                            <input type="text" class="form-control form-control-lg" id="shopId" placeholder="দোকান আইডি লিখুন (যেমন: 12345)" />
+                            <input type="text" class="form-control form-control-lg" id="shop_no" placeholder="দোকান আইডি লিখুন" />
                         </div>
                         <div class="d-grid">
-                            <button class="btn btn-primary btn-lg" onclick="searchBill()">খুঁজুন</button>
+                            <button class="btn btn-primary btn-lg" id="search-bill">খুঁজুন</button>
+                        </div>
+                        <!-- Loading Spinner -->
+                        <div id="loadingSpinner" class="text-center my-4 d-none">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="mt-2">লোড হচ্ছে...</p>
                         </div>
                     </div>
                 </div>
@@ -40,66 +47,60 @@
         </div>
         
         <!-- Bill Info Card -->
-        <div class="card shadow-sm d-none" id="billInfo">
-            <div class="card-body p-4">
-                <h3 class="h4 text-center mb-4">বিল বিবরণ</h3>
-                
-                <div class="table-responsive">
-                    <table class="table table-borderless">
-                        <tbody>
-                            <tr class="border-bottom">
-                                <td class="fw-semibold text-muted">দোকান আইডি:</td>
-                                <td class="text-end fw-medium" id="displayShopId">-</td>
-                            </tr>
-                            <tr class="border-bottom">
-                                <td class="fw-semibold text-muted">দোকানের নাম:</td>
-                                <td class="text-end fw-medium" id="shopName">-</td>
-                            </tr>
-                            <tr class="border-bottom">
-                                <td class="fw-semibold text-muted">মালিকের নাম:</td>
-                                <td class="text-end fw-medium" id="ownerName">-</td>
-                            </tr>
-                            <tr class="border-bottom">
-                                <td class="fw-semibold text-muted">ঠিকানা:</td>
-                                <td class="text-end fw-medium" id="address">-</td>
-                            </tr>
-                            <tr class="border-bottom">
-                                <td class="fw-semibold text-muted">বিলের মাস:</td>
-                                <td class="text-end fw-medium" id="billMonth">-</td>
-                            </tr>
-                            <tr class="border-bottom">
-                                <td class="fw-semibold text-muted">মিটার নম্বর:</td>
-                                <td class="text-end fw-medium" id="meterNumber">-</td>
-                            </tr>
-                            <tr class="border-bottom">
-                                <td class="fw-semibold text-muted">বর্তমান রিডিং:</td>
-                                <td class="text-end fw-medium" id="currentReading">-</td>
-                            </tr>
-                            <tr class="border-bottom">
-                                <td class="fw-semibold text-muted">পূর্ববর্তী রিডিং:</td>
-                                <td class="text-end fw-medium" id="previousReading">-</td>
-                            </tr>
-                            <tr>
-                                <td class="fw-semibold text-muted">ব্যবহৃত ইউনিট:</td>
-                                <td class="text-end fw-medium" id="unitsUsed">-</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-                
-                <div class="bg-light rounded p-4 text-center my-4">
-                    <p class="text-muted mb-2">মোট বিল</p>
-                    <h2 class="amount-display text-primary fw-bold mb-0">৳ <span id="totalAmount">0</span></h2>
-                </div>
-                
-                <div class="d-grid">
-                    <button class="btn btn-success btn-lg" onclick="payBill()">পেমেন্ট করুন</button>
-                </div>
-            </div>
+        <div class="card shadow-sm mt-4" id="billInfo">
+            
         </div>
     </div>
     
     <script>
-        
+        document.getElementById('search-bill').addEventListener('click', function () {
+            let shopInput = document.getElementById('shop_no');
+            let shop_no = shopInput.value.trim();
+
+            if (!shop_no) {
+                alert('দোকান আইডি লিখুন');
+                shopInput.focus();
+                return;
+            }
+
+            shop_no = encodeURIComponent(shop_no);
+
+            const spinner = document.getElementById('loadingSpinner');
+            const billInfo = document.getElementById('billInfo');
+
+            // Reset UI
+            billInfo.innerHTML = '';
+            billInfo.classList.add('d-none');
+
+            // Show spinner
+            spinner.classList.remove('d-none');
+
+            fetch(`{{ route('electric.bill.search') }}?shop_no=${shop_no}`)
+                .then(res => res.json())
+                .then(res => {
+                    spinner.classList.add('d-none'); // ❌ hide spinner
+
+                    if (!res.status) {
+                        alert(res.message);
+                        return;
+                    }
+
+                    // ✅ Inject HTML
+                    billInfo.innerHTML = res.html;
+                    billInfo.classList.remove('d-none');
+
+                    // 🎯 Smooth scroll to bill info
+                    billInfo.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                })
+                .catch(err => {
+                    spinner.classList.add('d-none');
+                    console.error(err);
+                    alert('সার্ভার সমস্যা হয়েছে');
+                });
+        });
+
     </script>
 @endsection
