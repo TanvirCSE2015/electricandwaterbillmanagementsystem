@@ -19,4 +19,8 @@ return [
     'surcharge_percent'=>'বিলম্ব মাসুল (%)',
     'surcharge_amount'=>'বিলম্ব মাসুল',
     'total_amount'=>'মোট পরিমাণ',
+    'bill_creation_date'=>'বিল তৈরির তারিখ',
+    'bill_due_date'=>'বিলের শেষ তারিখ',
+    'is_paid'=>'পেমেন্ট স্ট্যাটাস',
+    'paid_at'=>'পেমেন্টের তারিখ',
 ];

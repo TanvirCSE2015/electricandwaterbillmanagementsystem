@@ -3,6 +3,7 @@
 namespace App\Filament\Water\Resources\PayWaterBills\Pages;
 
 use App\Filament\Water\Resources\PayWaterBills\PayWaterBillResource;
+use App\Helpers\WaterBillHelper;
 use App\Models\WaterBill;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Select;
@@ -151,11 +152,11 @@ class WaterBillDetails extends Page implements HasTable,HasForms
                 ->color('primary')
                 ->requiresConfirmation()
                 ->action(function () {
-                    // $response = ElectricBillHelper::createInvoice(
-                    //     customerId: $this->record->id,
-                    //     count: $this->count ?? 1,
-                    //     userId: auth()->id()
-                    // );
+                    $response = WaterBillHelper::createInvoice(
+                        customerId: $this->record->id,
+                        count: $this->count ?? 1,
+                        userId: auth()->id()
+                    );
 
                     // $this->notify($response['status'], $response['message']);
                 }),

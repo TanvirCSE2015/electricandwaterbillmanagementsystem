@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Water;
 
 use App\Http\Controllers\Controller;
+use App\Models\WaterInvoice;
 use Illuminate\Http\Request;
 
 class WaterInvoiceController extends Controller
@@ -12,10 +13,10 @@ class WaterInvoiceController extends Controller
     {
         $billIds = $request->input('bill_ids', []);
         // Fetch the water bills based on the provided IDs
-        $waterBills = \App\Models\WaterBill::whereIn('id', $billIds)->get();
+        $receipt=WaterInvoice::with('waterCustomer')->find($request->id);
 
         // Return a view to print the water receipt
-        return view('invoice.print_water_invoice', compact('waterBills'));
+        return view('invoice.print_water_invoice', compact('receipt'));
     }
     
 }
