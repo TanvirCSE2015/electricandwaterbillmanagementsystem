@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Electric\ElectricReceiptController;
 use App\Http\Controllers\Electric\ElectricReporController;
+use App\Http\Controllers\Water\WaterInvoiceController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -24,3 +25,8 @@ Route::get('/print-electric-receipt', [ElectricReceiptController::class, 'PrintE
 ->name('electric-receipt.print');
 Route::get('/print-electric-bill-copy', [ElectricReceiptController::class, 'PrintElectricBillCopy'])
 ->name('electric-bill-copy.print');
+
+
+
+Route::get('/print-water-receipt', [WaterInvoiceController::class, 'PrintWaterReceipt'])
+->name('water-receipt.print');

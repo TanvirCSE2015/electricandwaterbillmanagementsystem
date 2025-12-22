@@ -16,7 +16,7 @@ function en2bn($number) {
       [ধারা ২৪ (১)]
     </div>
     <div class="col-6 text-end">
-      তারিখ: <span class="dashed">{{ en2bn($receipt->invoice_date) }}{{ 'ইং' }}</span>
+      তারিখ: <span class="dashed">{{ en2bn($receipt->w_invoice_date) }}{{ 'ইং' }}</span>
     </div>
   </div>
 
@@ -38,7 +38,7 @@ function en2bn($number) {
     ->encoding('UTF-8')
     ->generate(
         'রশিদ নং: ' . en2bn($receipt->invoice_number) . "\n" .
-        'মোট টাকা: ' . en2bn($receipt->total_amount) . '/='
+        'মোট টাকা: ' . en2bn($receipt->w_total_amount) . '/='
     )
 !!}
   </div>
@@ -49,25 +49,28 @@ function en2bn($number) {
     <div class="col-6">
       রশিদ নং: <span class="fw-bold">{{ en2bn($receipt->invoice_number) }}</span>
     </div>
+    <div class="col-6 text-end">
+      হোল্ডিং নাম্বার: <span class="fw-bold">{{ en2bn($receipt->waterCustomer->holding_number) }}</span>
+    </div>
   </div>
 
   <div class="mb-2">
     <p>
         <span class="label">জনাব</span>
-        <span class="d-inline-block dashed text-center" style="min-width: 35%;">{{ en2bn($receipt->customer->name) }}</span>
-        <span class="label">দোকান নং</span>
-        <span class="d-inline-block dashed text-center" style="min-width: 20%;">{{ en2bn($receipt->customer->shop_no) }}</span>
+        <span class="d-inline-block dashed text-center" style="min-width: 35%;">{{ en2bn($receipt->waterCustomer->customer_name) }}</span>
+        <span class="label">ফ্ল্যাট নং</span>
+        <span class="d-inline-block dashed text-center" style="min-width: 25%;">{{ en2bn($receipt->waterCustomer->flat_number) }}</span>
         <span>এর বিপরীতে প্রাপ্ত</span>
   </p>
   </div>
 
   <div class="mb-2">
    <span class=""> টাকা (কথায়):</span>
-    <span class="d-inline-block dashed text-center" style="min-width: 82%;">{{$numto->bnWord($receipt->total_amount )}}{{ ' টাকা মাত্র' }}</span>
+    <span class="d-inline-block dashed text-center" style="min-width: 82%;">{{$numto->bnWord($receipt->w_total_amount )}}{{ ' টাকা মাত্র' }}</span>
   </div>
 
   <div class="mb-2">
-    বিষয়: <span class="d-inline-block dashed text-center" style="min-width: 91%;">{{ $receipt->to_month ? en2bn($receipt->from_month) . ' হতে ' .en2bn($receipt->to_month) :  en2bn($receipt->from_month) }} বিদ্যুৎ বিল</span>
+    বিষয়: <span class="d-inline-block dashed text-center" style="min-width: 91%;">{{ $receipt->w_to_month ? en2bn($receipt->w_from_month) . ' হতে ' .en2bn($receipt->w_to_month) :  en2bn($receipt->w_from_month) }} পানি বিল</span>
   </div>
 
   {{-- <div class="mb-3">
@@ -75,7 +78,7 @@ function en2bn($number) {
   </div> --}}
 
   <div class="mb-4">
-    টাকা: <div class="dashed w-25 d-inline-block text-center">{{ $numto->bnCommaLakh($receipt->total_amount )}}{{ '/=' }}</div>
+    টাকা: <div class="dashed w-25 d-inline-block text-center">{{ $numto->bnCommaLakh($receipt->w_total_amount )}}{{ '/=' }}</div>
   </div>
 
 <div class="col-sm-12 d-flex justify-content-end align-items-end mb-5">
