@@ -47,6 +47,8 @@ class WaterBillingService
                                 'water_customer_id'  => $customer->id,
                                 'water_bill_month'   => $month,
                                 'water_bill_year'    => $year,
+                                'flat_numbers'       => $customer->flats->where('is_occupied',true)->pluck('flat_number')->implode(', '),
+                                'total_flats'        => $customer->flats->where('is_occupied',true)->count(),
                                 'base_amount'        => round($baseAmount, 2),
                                 'surcharge_percent'  => $setting->monthly_surcharge,
                                 'surcharge_amount'   => round($surchargeAmount, 2),

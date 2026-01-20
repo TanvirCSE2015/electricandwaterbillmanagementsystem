@@ -5,6 +5,7 @@ use App\Http\Controllers\Electric\ElectricReporController;
 use App\Http\Controllers\Water\WaterInvoiceController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Electric\ElectricBillController;
+use App\Http\Controllers\Water\WaterBillController;
 
 Route::get('/gateway', function () {
     return view('gateway');
@@ -36,6 +37,7 @@ Route::get('/', function () {
 Route::get('/electric-bill', function () {
     return view('pay_bill.electric_bill');
 })->name('electic-bill');
+
 Route::get('/water-bill', function () {
     return view('pay_bill.water_bill');
 })->name('water-bill');
@@ -46,3 +48,5 @@ Route::get('/electric-bill/search', [ElectricBillController::class, 'search'])->
 
 Route::get('/print-water-receipt', [WaterInvoiceController::class, 'PrintWaterReceipt'])
 ->name('water-receipt.print');
+Route::get('/print-water-bill-copy', [WaterBillController::class, 'PrintWaterBillCopy'])
+->name('water-bill-copy.print');

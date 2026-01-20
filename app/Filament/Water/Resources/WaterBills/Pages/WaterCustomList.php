@@ -6,6 +6,7 @@ use App\Filament\Water\Resources\WaterBills\WaterBillResource;
 use App\Helpers\WaterBillHelper;
 use App\Models\WaterBill;
 use Carbon\Carbon;
+use Filament\Actions\Action;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
 use Filament\Forms\Components\Select;
@@ -13,6 +14,7 @@ use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Resources\Pages\Page;
 use Filament\Schemas\Components\Grid;
+use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Concerns\InteractsWithTable;
@@ -45,9 +47,21 @@ class WaterCustomList extends Page implements HasTable,HasForms
     {
         return [
             Grid::make(4)->schema([
+                Select::make('year')
+                    ->label(__('fields.billing_year'))
+                    ->options(function () {
+                        $current = date('Y');
+                        $years = [];
+                        for ($i = $current; $i >= 2023; $i--) {
+                            $years[$i] = $i;
+                        }
+                        return $years;
+                    })
+                    ->reactive()
+                    ->afterStateUpdated(fn () => $this->resetTable()),
                 Select::make('month')
                     ->label(__('fields.billing_month'))
-                    ->options(function () {
+                    ->options(function (callable $get) {
                         $months = [
                             1 => 'January',
                             2 => 'February',
@@ -62,22 +76,22 @@ class WaterCustomList extends Page implements HasTable,HasForms
                             11 => 'November',
                             12 => 'December',
                         ];
-                        $currentMonth = date('n'); // 1-12
-                        // Only include months up to last month
-                        return array_slice($months, 0, $currentMonth - 1, true);
-                    })
-                    ->reactive()
-                    ->afterStateUpdated(fn () => $this->resetTable()),
 
-                Select::make('year')
-                    ->label(__('fields.billing_year'))
-                    ->options(function () {
-                        $current = date('Y');
-                        $years = [];
-                        for ($i = $current; $i >= 2023; $i--) {
-                            $years[$i] = $i;
+                        $selectedYear = $get('year');
+                        $now = now();
+
+                        // If no year selected → show all months
+                        if (! $selectedYear) {
+                            return $months;
                         }
-                        return $years;
+
+                        // Current year → only past months
+                        if ((int) $selectedYear === $now->year) {
+                            return array_slice($months, 0, $now->month - 1, true);
+                        }
+
+                        // Past or future year → all months
+                        return $months;
                     })
                     ->reactive()
                     ->afterStateUpdated(fn () => $this->resetTable()),
@@ -167,6 +181,20 @@ class WaterCustomList extends Page implements HasTable,HasForms
         return [
             ViewAction::make(),
             // EditAction::make(),
+        ];
+    }
+
+    protected function getTableHeaderActions(): array
+    {
+        return [
+            Action::make('print')
+                ->label('প্রিন্ট করুন')
+                ->icon(Heroicon::Printer)
+                ->url(fn () => route('water-bill-copy.print', [
+                    'month' => $this->month,
+                    'year' => $this->year,
+                ]))
+                ->openUrlInNewTab(),
         ];
     }
 }

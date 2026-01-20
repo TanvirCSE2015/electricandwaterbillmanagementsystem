@@ -26,7 +26,7 @@ class WaterCustomersTable
                 TextColumn::make('holding_number')
                     ->label(__('water_fields.holding_number'))
                     ->searchable(),
-                TextColumn::make('flat_number')
+                TextColumn::make('flats.flat_number')
                     ->label(__('water_fields.flat_number'))
                     ->searchable(),
                 TextColumn::make('total_flat')

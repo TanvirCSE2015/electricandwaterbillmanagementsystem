@@ -49,9 +49,21 @@ class WaterBillGenerate extends Page implements HasForms,HasTable
         return [
 
             Grid::make(4)->schema([
+                Select::make('year')
+                    ->label(__('fields.billing_year'))
+                    ->options(function () {
+                        $current = date('Y');
+                        $years = [];
+                        for ($i = $current; $i >= 2023; $i--) {
+                            $years[$i] = $i;
+                        }
+                        return $years;
+                    })
+                    ->reactive()
+                    ->afterStateUpdated(fn () => $this->resetTable()),
                 Select::make('month')
                     ->label(__('fields.billing_month'))
-                    ->options(function () {
+                    ->options(function (callable $get) {
                         $months = [
                             1 => 'January',
                             2 => 'February',
@@ -66,25 +78,27 @@ class WaterBillGenerate extends Page implements HasForms,HasTable
                             11 => 'November',
                             12 => 'December',
                         ];
-                        $currentMonth = date('n'); // 1-12
-                        // Only include months up to last month
-                        return array_slice($months, 0, $currentMonth - 1, true);
+
+                        $selectedYear = $get('year');
+                        $now = now();
+
+                        // If no year selected → show all months
+                        if (! $selectedYear) {
+                            return $months;
+                        }
+
+                        // Current year → only past months
+                        if ((int) $selectedYear === $now->year) {
+                            return array_slice($months, 0, $now->month - 1, true);
+                        }
+
+                        // Past or future year → all months
+                        return $months;
                     })
                     ->reactive()
                     ->afterStateUpdated(fn () => $this->resetTable()),
 
-                Select::make('year')
-                    ->label(__('fields.billing_year'))
-                    ->options(function () {
-                        $current = date('Y');
-                        $years = [];
-                        for ($i = $current; $i >= 2023; $i--) {
-                            $years[$i] = $i;
-                        }
-                        return $years;
-                    })
-                    ->reactive()
-                    ->afterStateUpdated(fn () => $this->resetTable()),
+                
             ]),
             
         ];
