@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('water_customers', function (Blueprint $table) {
-             $table->enum('type',['flat','construction','complete','combine'])->after('previous_due')->default('flat');
+            $table->float('total_security_flat',8,2)->after('total_flat')->default(0);
         });
     }
 

@@ -41,6 +41,12 @@ class WaterCustomerForm
                     ->formatStateUsing(fn($state)=>ElectricBillHelper::en2bn($state))
                     ->dehydrateStateUsing(fn($state)=>ElectricBillHelper::bn2en($state))
                     ->default(1),
+                TextInput::make('total_security_flat')
+                    ->label(__('water_fields.total_security_flat'))
+                    ->required()
+                    ->formatStateUsing(fn($state)=>ElectricBillHelper::en2bn($state))
+                    ->dehydrateStateUsing(fn($state)=>ElectricBillHelper::bn2en($state))
+                    ->default(0),
                 TextInput::make('previous_due')
                     ->label(__('water_fields.previous_due'))
                     ->required()
@@ -53,6 +59,7 @@ class WaterCustomerForm
                         'flat'=>'ফ্ল্যাট',
                         'construction'=>'নির্মাণাধীন',
                         'complete'=>'নির্মাণ সম্পন্ন',
+                        'combine'=>'ফ্ল্যাট ও নির্মাণাধীন উভয়',
                     ]),
                 Textarea::make('customer_address')
                     ->label(__('water_fields.customer_address'))

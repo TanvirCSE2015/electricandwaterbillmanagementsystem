@@ -28,4 +28,7 @@ return [
     'flats_section'=>'ফ্ল্যাটসমূহের তথ্য',
     'monthly_security'=>'মাসিক সিকিউরিটি',
     'const_security'=>'নির্মাণাধীন সিকিউরিটি',
+    'total_security_flat'=>'সিকিউরিটি ফ্ল্যাট সংখ্যা',
+    's_cons_amount'=>'নির্মাণাধীন সিকিউরিটি',
+    'cons_amount'=>'নির্মাণাধীন পরিমাণ',
 ];

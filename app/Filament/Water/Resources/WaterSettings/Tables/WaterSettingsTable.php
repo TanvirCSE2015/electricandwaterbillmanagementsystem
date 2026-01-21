@@ -18,13 +18,20 @@ class WaterSettingsTable
                 TextColumn::make('monthly_rate')
                     ->label(__('water_fields.monthly_rate'))
                     ->formatStateUsing(fn($state)=>ElectricBillHelper::en2bn($state)),
+                TextColumn::make('monthly_security')
+                    ->label(__('water_fields.monthly_security'))
+                    ->formatStateUsing(fn($state)=>ElectricBillHelper::en2bn($state)),
                 TextColumn::make('monthly_const_rate')
                     ->label(__('water_fields.monthly_const_rate'))
+                    ->formatStateUsing(fn($state)=>ElectricBillHelper::en2bn($state)),
+                TextColumn::make('const_security')
+                    ->label(__('water_fields.const_security'))
                     ->formatStateUsing(fn($state)=>ElectricBillHelper::en2bn($state)),
                 TextColumn::make('monthly_surcharge')
                     ->label(__('water_fields.monthly_surcharge'))
                     ->suffix('  %')
                     ->formatStateUsing(fn($state)=>ElectricBillHelper::en2bn($state)),
+                
             ])
             ->filters([
                 //

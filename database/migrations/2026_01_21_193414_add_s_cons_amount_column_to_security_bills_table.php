@@ -11,8 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('water_customers', function (Blueprint $table) {
-             $table->enum('type',['flat','construction','complete','combine'])->after('previous_due')->default('flat');
+        Schema::table('security_bills', function (Blueprint $table) {
+            $table->float('s_cons_amount',8,2)->after('base_amount')->default(0);
         });
     }
 
@@ -21,7 +21,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('water_customers', function (Blueprint $table) {
+        Schema::table('security_bills', function (Blueprint $table) {
             //
         });
     }
