@@ -17,8 +17,18 @@ class WaterCustomer extends Model
         return $this->hasMany(WaterCustomerFlat::class);
     }
 
+    public function activeFlats():HasMany
+    {
+        return $this->hasMany(WaterCustomerFlat::class)->where('is_occupied', true);
+    }
+
     public function unpaidWaterBills():HasMany
     {
         return $this->hasMany(WaterBill::class)->where('is_paid', false);
+    }
+
+    public function securityBills():HasMany
+    {
+        return $this->hasMany(SecurityBill::class);
     }
 }

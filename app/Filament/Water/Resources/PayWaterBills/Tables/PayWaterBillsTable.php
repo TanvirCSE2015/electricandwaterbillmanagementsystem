@@ -3,6 +3,7 @@
 namespace App\Filament\Water\Resources\PayWaterBills\Tables;
 
 use App\Filament\Water\Resources\PayWaterBills\PayWaterBillResource;
+use Dom\Text;
 use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
@@ -33,10 +34,20 @@ class PayWaterBillsTable
                 ->label(__('water_fields.previous_due'))
                     ->numeric()
                     ->sortable(),
+                TextColumn::make('total_security_amount')
+                    ->label('সিকিউরিটি বিল')
+                    ->numeric()
+                    ->getStateUsing(fn ($record) => round($record->total_security_amount))
+                    ->sortable(),
+                TextColumn::make('totat_due_amount')
+                    ->label('পানি বিল')
+                    ->numeric()
+                    ->getStateUsing(fn ($record) => round($record->total_due_amount))
+                    ->sortable(),
                 TextColumn::make('total_due_amount')
                     ->label('মোট বকেয়া পরিমাণ')
                     ->numeric()
-                    ->getStateUsing(fn ($record) => round($record->total_due_amount + $record->previous_due))
+                    ->getStateUsing(fn ($record) => round($record->total_due_amount + $record->previous_due + $record->total_security_amount))
                     ->sortable(),
                 TextColumn::make('type')
                     ->badge(),

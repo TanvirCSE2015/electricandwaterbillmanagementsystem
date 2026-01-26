@@ -2,6 +2,8 @@
 
 namespace App\Helpers;
 
+use App\Models\SecurityBill;
+use App\Models\SecurityInvoice;
 use App\Models\WaterBill;
 use App\Models\WaterCustomer;
 use App\Models\WaterInvoice;
@@ -36,26 +38,56 @@ class WaterBillHelper
     {
         return DB::transaction(function () use ($customerId, $count, $userId) {
             // Fetch unpaid bills
-            $bills = WaterBill::query()->where(['water_customer_id'=>$customerId,'is_paid'=>false])
-                ->select('*')
-                ->selectRaw("
-                    CASE
-                        WHEN bill_due_date < CURDATE()
-                        THEN ROUND(
-                            base_amount + (base_amount * surcharge_percent / 100),
-                            2
-                        )
-                        ELSE base_amount
-                    END AS payable_amount
+            $bills = WaterBill::query()
+
+                    ->leftJoin('security_bills as sb', function ($join) {
+                        $join->on('sb.water_customer_id', '=', 'water_bills.water_customer_id')
+                            ->on('sb.s_bill_month', '=', 'water_bills.water_bill_month')
+                            ->on('sb.s_bill_year', '=', 'water_bills.water_bill_year');
+                    })
+                    ->select('water_bills.*')
+                    ->selectRaw('COALESCE(sb.total_amount, 0)  AS security_amount, sb.id as security_id')
+                    ->selectRaw("
+                        CASE
+                            WHEN water_bills.bill_due_date < CURDATE()
+                            THEN ROUND(
+                                water_bills.total_amount +
+                                (water_bills.total_amount * water_bills.surcharge_percent / 100),
+                                2
+                            )
+                            ELSE water_bills.total_amount
+                        END AS payable_amount
+                    ")
+
+                    ->selectRaw("
+                        CASE
+                            WHEN water_bills.bill_due_date < CURDATE()
+                            THEN ROUND(
+                                water_bills.total_amount * water_bills.surcharge_percent / 100,
+                                2
+                            )
+                            ELSE 0
+                        END AS calculated_surcharge
+                    ")
+                    ->selectRaw("
+                    (
+                        CASE
+                            WHEN water_bills.bill_due_date < CURDATE()
+                            THEN ROUND(
+                                water_bills.total_amount +
+                                (water_bills.total_amount * water_bills.surcharge_percent / 100),
+                                2
+                            )
+                            ELSE water_bills.total_amount
+                        END
+                        +
+                        COALESCE(sb.total_amount, 0) 
+                    ) AS total_payable
                 ")
-                ->selectRaw("
-                    CASE
-                        WHEN bill_due_date < CURDATE()
-                        THEN ROUND(base_amount * surcharge_percent / 100, 2)
-                        ELSE 0
-                    END AS calculated_surcharge
-                ")
-                ->limit($count)
+                ->where('water_bills.water_customer_id', $customerId)
+                ->where('water_bills.is_paid', false)
+
+                ->limit($count ?? 1)
                 ->get();
 
             if ($bills->isEmpty()) {
@@ -63,7 +95,8 @@ class WaterBillHelper
             }
 
             // Calculate total amount with surcharge
-            $totalAmount = $bills->sum('payable_amount');
+            $totalAmount = $bills->sum('payable_amount') ;
+            $totalSecurity = $bills->sum('security_amount');
             //Carbon::create()->month(3)->translatedFormat('F')
             // Determine invoice range and metadata
             $fromMonth = Carbon::create()->month($bills->first()->water_bill_month)->translatedFormat('F') . '-' . $bills->first()->water_bill_year ?? '';
@@ -97,13 +130,35 @@ class WaterBillHelper
                     'water_invoice_id' => $invoice->id,
                 ]);
             }
+            $s_invoice = SecurityInvoice::create([
+                'water_customer_id' => $customerId,
+                's_invoice_date' => now(),
+                's_invoice_month' => now()->month,
+                's_invoice_month_name' => now()->format('F'),
+                's_invoice_year' => $invoiceYear,
+                's_from_month' => $fromMonth,
+                's_to_month' => $toMonth,
+                's_total_amount' => $totalSecurity,
+                's_created_by' => $userId,
+            ]);
+            $securityIds = $bills->pluck('security_id')->filter()->toArray();
+
+                
+            SecurityBill::whereIn('id', $securityIds)->update([
+                'is_paid' => true,
+                // 'paid_by' => $userId,
+                //  'paid_at' => now(),
+                // 'payment_method' => 'Offline',
+                 'security_invoice_id' => $s_invoice->id,
+                 'paid_amount' => $totalSecurity,
+            ]);
 
             // return [
             //     'status' => 'success',
             //     'message' => 'ইনভয়েস সফলভাবে তৈরি হয়েছে!',
             //     'invoice' => $invoice,
             // ];
-            return redirect()->route('water-receipt.print',['id'=>$invoice->id,'type'=>'current']);
+            return redirect()->route('water-receipt.print',['id'=>$invoice->id, 's_id'=>$s_invoice->id,'type'=>'current']);
         });
     }
 

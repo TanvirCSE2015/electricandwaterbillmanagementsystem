@@ -3,7 +3,7 @@
 use Rakibhstu\Banglanumber\NumberToBangla;
 
 $numto = new NumberToBangla();
-$previousDue =  $this->getTableQuery()->get()->sum('payable_amount');
+$previousDue =  $this->getTableQuery()->get()->sum('total_payable');
 @endphp
 <x-filament-panels::page>
     {{-- Page content --}}

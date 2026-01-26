@@ -38,6 +38,9 @@ class ListPayWaterBills extends ListRecords
                             END
                         )
                     "));
+            }], 'total_amount')
+            ->withSum(['securityBills as total_security_amount' => function ($query) {
+                $query->select(DB::raw("SUM(total_amount)"));
             }], 'total_amount');
     }
 

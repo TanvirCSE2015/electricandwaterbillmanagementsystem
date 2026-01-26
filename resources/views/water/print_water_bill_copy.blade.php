@@ -186,7 +186,8 @@
                 </tr>
                 <tr>
                     <td colspan="4" class="text-start"><strong>মোট বিল</strong></td>
-                    <td class="" rowspan=""><strong>{{ $numto->bnCommaLakh($record->total_amount + $total_unpaid + $record->waterCustomer->previous_due) }}</strong></td>
+                    <td class="" rowspan=""><strong>{{ $numto->bnCommaLakh($record->total_amount + round($record->total_amount * ($record->surcharge_percent / 100))
+                     + $total_unpaid + $record->waterCustomer->previous_due) }}</strong></td>
                 </tr>
             </tbody>
         </table>

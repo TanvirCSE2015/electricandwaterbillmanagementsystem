@@ -28,12 +28,16 @@ class WaterBillsTable
                     ->label(__('water_fields.water_bill_year'))
                     ->formatStateUsing(fn ( $state) => WaterBillHelper::en2bn($state))
                     ->sortable(),
-                TextColumn::make('surcharge_amount')
-                    ->label(__('water_fields.surcharge_amount'))
-                    ->numeric()
-                    ->sortable(),
+                // TextColumn::make('surcharge_amount')
+                //     ->label(__('water_fields.surcharge_amount'))
+                //     ->numeric()
+                //     ->sortable(),
                 TextColumn::make('total_amount')
                     ->label(__('water_fields.total_amount'))
+                    ->numeric()
+                    ->sortable(),
+                TextColumn::make('surcharge_amount')
+                    ->label(__('water_fields.surcharge_amount'))
                     ->numeric()
                     ->sortable(),
                 TextColumn::make('bill_creation_date')

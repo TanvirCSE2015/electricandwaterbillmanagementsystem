@@ -6,6 +6,7 @@ use App\Filament\Water\Resources\WaterBills\WaterBillResource;
 use App\Helpers\WaterBillHelper;
 use App\Models\WaterBill;
 use Carbon\Carbon;
+use Dom\Text;
 use Filament\Actions\Action;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
@@ -101,27 +102,60 @@ class WaterCustomList extends Page implements HasTable,HasForms
 
     protected function getTableQuery(): Builder
     {
-       return WaterBill::query()
-        ->select('*')
+    //    return WaterBill::query()
+    //     ->select('*')
+    //     ->selectRaw("
+    //         CASE
+    //             WHEN bill_due_date < CURDATE()
+    //             THEN ROUND(
+    //                 base_amount + (base_amount * surcharge_percent / 100),
+    //                 2
+    //             )
+    //             ELSE base_amount
+    //         END AS payable_amount
+    //     ")
+    //     ->selectRaw("
+    //         CASE
+    //             WHEN bill_due_date < CURDATE()
+    //             THEN ROUND(base_amount * surcharge_percent / 100, 2)
+    //             ELSE 0
+    //         END AS calculated_surcharge
+    //     ")
+    //     ->when($this->month, fn (Builder $query) => $query->where('water_bill_month', $this->month))
+    //     ->when($this->year, fn (Builder $query) => $query->where('water_bill_year', $this->year));
+
+        return WaterBill::query()
+        ->leftJoin('security_bills as sb', function ($join) {
+            $join->on('sb.water_customer_id', '=', 'water_bills.water_customer_id')
+                ->on('sb.s_bill_month', '=', 'water_bills.water_bill_month')
+                ->on('sb.s_bill_year', '=', 'water_bills.water_bill_year');
+        })
+        ->select('water_bills.*')
+
+        // security amount
+        ->selectRaw('COALESCE(sb.total_amount, 0) as security_amount, sb.security_invoice_id as security_invoice_id')
+
+        // payable amount
         ->selectRaw("
             CASE
-                WHEN bill_due_date < CURDATE()
+                WHEN water_bills.bill_due_date < CURDATE()
                 THEN ROUND(
-                    base_amount + (base_amount * surcharge_percent / 100),
+                    water_bills.total_amount + (water_bills.total_amount * surcharge_percent / 100) ,
                     2
                 )
-                ELSE base_amount
+                ELSE water_bills.total_amount
             END AS payable_amount
         ")
+
         ->selectRaw("
             CASE
-                WHEN bill_due_date < CURDATE()
-                THEN ROUND(base_amount * surcharge_percent / 100, 2)
+                WHEN water_bills.bill_due_date < CURDATE()
+                THEN ROUND(water_bills.total_amount * surcharge_percent / 100, 2)
                 ELSE 0
             END AS calculated_surcharge
         ")
-        ->when($this->month, fn (Builder $query) => $query->where('water_bill_month', $this->month))
-        ->when($this->year, fn (Builder $query) => $query->where('water_bill_year', $this->year));
+        ->when($this->month, fn ($q) => $q->where('water_bill_month', $this->month))
+        ->when($this->year, fn ($q) => $q->where('water_bill_year', $this->year));
     }
 
     protected function getTableColumns(): array
@@ -143,7 +177,11 @@ class WaterCustomList extends Page implements HasTable,HasForms
                 ->numeric()
                 ->sortable(),
             TextColumn::make('payable_amount')
-                ->label(__('water_fields.total_amount'))
+                ->label('পানি বিল')
+                ->numeric()
+                ->sortable(),
+            TextColumn::make('security_amount')
+                ->label('সিকিউরিটি বিল')
                 ->numeric()
                 ->sortable(),
             TextColumn::make('bill_creation_date')
@@ -181,6 +219,17 @@ class WaterCustomList extends Page implements HasTable,HasForms
         return [
             ViewAction::make(),
             // EditAction::make(),
+            Action::make('print_receipt')
+                ->label('রশিদ প্রিন্ট করুন')
+                ->icon(Heroicon::Printer)
+                ->action(function (WaterBill $record) {
+                    return redirect()->route('water-receipt.print', [
+                        'id' => $record->water_invoice_id, 
+                        's_id' => $record->security_invoice_id,
+                        'type' => 'single']);
+                })
+                ->hidden(fn (WaterBill $record) => !$record->is_paid)
+                ->openUrlInNewTab(),
         ];
     }
 

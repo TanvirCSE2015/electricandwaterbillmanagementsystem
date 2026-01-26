@@ -5,6 +5,7 @@ namespace App\Filament\Water\Resources\PayWaterBills\Pages;
 use App\Filament\Water\Resources\PayWaterBills\PayWaterBillResource;
 use App\Helpers\WaterBillHelper;
 use App\Models\WaterBill;
+use Dom\Text;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Concerns\InteractsWithForms;
@@ -87,25 +88,87 @@ class WaterBillDetails extends Page implements HasTable,HasForms
 
     protected function getTableQuery():Builder
     {
-        return WaterBill::query()->where(['water_customer_id'=>$this->record->id,'is_paid'=>false])
-        ->select('*')
+        // return WaterBill::query()
+        // ->leftJoin('security_bills as sb', function ($join) {
+        //     $join->on('sb.water_customer_id', '=', 'water_bills.water_customer_id')
+        //         ->on('sb.s_bill_month', '=', 'water_bills.water_bill_month')
+        //         ->on('sb.s_bill_year', '=', 'water_bills.water_bill_year');
+        // })
+        // ->select('water_bills.*')
+
+        // // security amount
+        // ->selectRaw('COALESCE(sb.total_amount, 0) + s_cons_amount as security_amount')
+        
+        // ->where(['water_customer_id'=>$this->record->id,'is_paid'=>false])
+        // ->select('water_bills.*')
+        // ->selectRaw("
+        //     CASE
+        //         WHEN bill_due_date < CURDATE()
+        //         THEN ROUND(
+        //             base_amount + (base_amount * surcharge_percent / 100),
+        //             2
+        //         )
+        //         ELSE base_amount
+        //     END AS payable_amount
+        // ")
+        // ->selectRaw("
+        //     CASE
+        //         WHEN bill_due_date < CURDATE()
+        //         THEN ROUND(base_amount * surcharge_percent / 100, 2)
+        //         ELSE 0
+        //     END AS calculated_surcharge
+        // ")
+
+        // ->limit($this->count ?? 1);
+       return WaterBill::query()
+
+        ->leftJoin('security_bills as sb', function ($join) {
+            $join->on('sb.water_customer_id', '=', 'water_bills.water_customer_id')
+                ->on('sb.s_bill_month', '=', 'water_bills.water_bill_month')
+                ->on('sb.s_bill_year', '=', 'water_bills.water_bill_year');
+        })
+        ->select('water_bills.*')
+        ->selectRaw('COALESCE(sb.total_amount, 0)  AS security_amount, sb.id as security_id, sb.s_cons_amount as cons_security,sb.base_amount as s_base_amount')
         ->selectRaw("
             CASE
-                WHEN bill_due_date < CURDATE()
+                WHEN water_bills.bill_due_date < CURDATE()
                 THEN ROUND(
-                    base_amount + (base_amount * surcharge_percent / 100),
+                    water_bills.total_amount +
+                    (water_bills.total_amount * water_bills.surcharge_percent / 100),
                     2
                 )
-                ELSE base_amount
+                ELSE water_bills.total_amount
             END AS payable_amount
         ")
+
         ->selectRaw("
             CASE
-                WHEN bill_due_date < CURDATE()
-                THEN ROUND(base_amount * surcharge_percent / 100, 2)
+                WHEN water_bills.bill_due_date < CURDATE()
+                THEN ROUND(
+                    water_bills.total_amount * water_bills.surcharge_percent / 100,
+                    2
+                )
                 ELSE 0
             END AS calculated_surcharge
         ")
+        ->selectRaw("
+        (
+            CASE
+                WHEN water_bills.bill_due_date < CURDATE()
+                THEN ROUND(
+                    water_bills.total_amount +
+                    (water_bills.total_amount * water_bills.surcharge_percent / 100),
+                    2
+                )
+                ELSE water_bills.total_amount
+            END
+            +
+            COALESCE(sb.total_amount, 0) 
+        ) AS total_payable
+    ")
+        ->where('water_bills.water_customer_id', $this->record->id)
+        ->where('water_bills.is_paid', false)
+
         ->limit($this->count ?? 1);
     }
 
@@ -120,7 +183,10 @@ class WaterBillDetails extends Page implements HasTable,HasForms
             TextColumn::make('water_bill_year')
                 ->label(__('water_fields.water_bill_year')),
             TextColumn::make('base_amount')
-                ->label(__('water_fields.base_amount'))
+                ->label('বেসিক বিল')
+                ->numeric(),
+            TextColumn::make('cons_amount')
+                ->label('নির্মাণাধীন বিল')
                 ->numeric(),
             TextColumn::make('surcharge_percent')
                 ->label(__('water_fields.surcharge_percent'))
@@ -134,6 +200,30 @@ class WaterBillDetails extends Page implements HasTable,HasForms
                 ->money('BDT')
                 ->summarize(Sum::make()->money('BDT')
                 ->label('মোট বকেয়া'))
+                ->numeric(),
+            
+            TextColumn::make('s_base_amount')
+                ->label('বেসিক বিল')
+                ->money('BDT')
+                ->numeric(),
+            TextColumn::make('cons_security')
+                ->label('নির্মাণাধীন সিকিউরিটি')
+                ->money('BDT')
+                ->numeric(),
+            TextColumn::make('security_amount')
+                ->label('সিকিউরিটি বিল')
+                ->money('BDT')
+                ->summarize(Sum::make()->money('BDT')
+                ->label('সিকিউরিটি বিল'))
+                ->numeric(),
+            TextColumn::make('total_payable')
+                ->label('মোট')
+                ->money('BDT')
+                ->summarize(Sum::make()->money('BDT')
+                ->label('মোট পরিশোধযোগ্য'))
+                ->getStateUsing(function (WaterBill $record) {
+                    return $record->payable_amount + $record->security_amount;
+                })
                 ->numeric(),
         ];
     }
@@ -154,6 +244,7 @@ class WaterBillDetails extends Page implements HasTable,HasForms
                 ->action(function () {
                     $response = WaterBillHelper::createInvoice(
                         customerId: $this->record->id,
+                        securityId: $this->record->security_id,
                         count: $this->count ?? 1,
                         userId: auth()->id()
                     );
