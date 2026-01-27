@@ -4,6 +4,8 @@ namespace App\Providers\Filament;
 
 use App\Filament\Electricity\Resources\Customers\CustomerResource;
 use App\Filament\Electricity\Resources\ElectricBills\ElectricBillResource;
+use App\Filament\Water\Pages\WaterInvoiceReport;
+use App\Filament\Water\Resources\WaterBills\WaterBillResource;
 use Filament\Http\Middleware\Authenticate;
 use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
 use Filament\Actions\Action;
@@ -76,6 +78,10 @@ class AdminPanelProvider extends PanelProvider
             ->resources([
                 CustomerResource::class,
                 ElectricBillResource::class,
+                WaterBillResource::class,
+            ])
+            ->pages([
+               WaterInvoiceReport::class,
             ]);
     }
 }

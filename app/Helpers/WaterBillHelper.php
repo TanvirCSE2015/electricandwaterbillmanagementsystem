@@ -114,6 +114,7 @@ class WaterBillHelper
                 'w_invoice_year' => $invoiceYear,
                 'w_from_month' => $fromMonth,
                 'w_to_month' => $toMonth,
+                'w_due_type' => 'current',
                 'w_total_amount' => $totalAmount,
                 'w_created_by' => $userId,
             ]);
@@ -183,6 +184,7 @@ class WaterBillHelper
                 'w_invoice_year' => now()->year,
                 'w_from_month' => 'পূর্বের বকেয়া',
                 'w_to_month' => '',
+                'w_due_type' => 'previous',
                 'w_total_amount' => $paidAmount,
                 'w_created_by' => $userId,
             ]);

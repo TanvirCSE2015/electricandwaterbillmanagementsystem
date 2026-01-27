@@ -51,6 +51,9 @@ Route::get('/print-water-receipt', [WaterInvoiceController::class, 'PrintWaterRe
 ->name('water-receipt.print');
 Route::get('/print-water-bill-copy', [WaterBillController::class, 'PrintWaterBillCopy'])
 ->name('water-bill-copy.print');
+
 //water bill report print
 Route::get('/print-water-invoice-report',[WaterReportController::class,'PrintWaterInvoiceReport'])
 ->name('water-invoice-report.print')->middleware('auth');
+Route::get('/print-laser-report',[WaterReportController::class,'PrintWaterLaserReport'])
+->name('water-laser-report.print')->middleware('auth');

@@ -77,6 +77,11 @@ class ElectricityPanelProvider extends PanelProvider
                 ->url(fn() => auth()->user()?->hasRole('super_admin') ? '/admin' : null)
                 ->icon('heroicon-o-cog')
                 ->visible(fn() => auth()->user()?->hasRole('super_admin')),
+            Action::make('water')
+                ->label('জল বিল ম্যানেজমেন্ট সিস্টেম')
+                ->url(fn() => auth()->user()?->hasRole('super_admin') ? '/water' : null)
+                ->icon('heroicon-o-cog')
+                ->visible(fn() => auth()->user()?->hasRole('super_admin')),
         ];
     }
 }

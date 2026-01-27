@@ -79,6 +79,10 @@ function en2bn($number) {
 
   <div class="mb-4">
     টাকা: <div class="dashed w-25 d-inline-block text-center">{{ $numto->bnCommaLakh($receipt->w_total_amount )}}{{ '/=' }}</div>
+    @if ($type == 'previous' && $receipt->waterCustomer->previous_due > 0)  
+    বকেয়া: <div class="dashed w-25 d-inline-block text-center">{{ $numto->bnCommaLakh($receipt->waterCustomer->previous_due )}}{{ '/=' }}</div>
+      
+    @endif
   </div>
 
 <div class="col-sm-12 d-flex justify-content-end align-items-end mb-5">
@@ -91,6 +95,8 @@ function en2bn($number) {
 </div>
 
 {{-- //------------------  Security Water Receipt  ------------------// --}}
+@if ($type != 'previous')
+  
 
 <div style="border-top: 1px dashed #000!important"></div>
 <div class="row mb-2 mt-4 pt-4">
@@ -170,4 +176,5 @@ function en2bn($number) {
         <p class="fs-6" style="font-size: 12px!important;">( সিস্টেম থেকে প্রিন্টকৃত কপি,কোন স্বাক্ষরের প্রয়োজন নেই )</p>
     </div>
 </div>
+@endif
 @endsection

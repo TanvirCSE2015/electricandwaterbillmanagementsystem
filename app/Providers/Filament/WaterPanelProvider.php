@@ -2,6 +2,8 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Water\Widgets\CustomWaterInfo;
+use Filament\Actions\Action;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -44,7 +46,8 @@ class WaterPanelProvider extends PanelProvider
             ->discoverWidgets(in: app_path('Filament/Water/Widgets'), for: 'App\Filament\Water\Widgets')
             ->widgets([
                 AccountWidget::class,
-                FilamentInfoWidget::class,
+                CustomWaterInfo::class,
+                // FilamentInfoWidget::class,
             ])
             ->middleware([
                 EncryptCookies::class,
@@ -59,6 +62,24 @@ class WaterPanelProvider extends PanelProvider
             ])
             ->authMiddleware([
                 Authenticate::class,
-            ]);
+            ])
+            ->userMenuItems(self::userMenuItems());
+    }
+
+    public static function userMenuItems(): array
+    {
+        // Return a closure so it's evaluated at runtime
+        return [
+            Action::make('admin')
+                ->label('এডমিন প্যানেল')
+                ->url(fn() => auth()->user()?->hasRole('super_admin') ? '/admin' : null)
+                ->icon('heroicon-o-cog')
+                ->visible(fn() => auth()->user()?->hasRole('super_admin')),
+            Action::make('electricity')
+                ->label('বিদ্যুৎ বিল ম্যানেজমেন্ট সিস্টেম')
+                ->url(fn() => auth()->user()?->hasRole('super_admin') ? '/electricity' : null)
+                ->icon('heroicon-o-cog')
+                ->visible(fn() => auth()->user()?->hasRole('super_admin')),
+        ];
     }
 }

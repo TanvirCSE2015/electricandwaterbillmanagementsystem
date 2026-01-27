@@ -16,9 +16,10 @@ class WaterInvoiceController extends Controller
         // Fetch the water bills based on the provided IDs
         $receipt=WaterInvoice::with('waterCustomer')->find($request->id);
         $s_receipt=SecurityInvoice::with('waterCustomer')->find($request->s_id);
+        $type=$request->type;
 
         // Return a view to print the water receipt
-        return view('invoice.print_water_invoice', compact('receipt', 's_receipt'));
+        return view('invoice.print_water_invoice', compact('receipt', 's_receipt', 'type'));
     }
     
 }

@@ -74,6 +74,7 @@ class WaterInvoiceReport extends Page implements HasTable, HasForms
                         ->options([
                             'water' => 'পানি বিল',
                             'security' => 'নিরাপত্তা বিল',
+                            'previous' => 'পূর্বের বকেয়া বিল',
                         ])
                         ->reactive()
                         ->afterStateUpdated(fn () => $this->resetTable()),
@@ -83,7 +84,7 @@ class WaterInvoiceReport extends Page implements HasTable, HasForms
     protected function getTableQuery()
     {
         $query = null;
-        if ($this->type === 'water') {
+        if ($this->type === 'water' || $this->type === 'previous') {
             $query = \App\Models\WaterInvoice::query()
             ->when($this->date && $this->end_date, function (Builder $query) {
                 $query->whereBetween('w_invoice_date', [
@@ -93,7 +94,8 @@ class WaterInvoiceReport extends Page implements HasTable, HasForms
             })
             ->when($this->date && ! $this->end_date, function (Builder $query) {
                 $query->whereDate('w_invoice_date', '=', $this->date->toDateString());
-            });
+            })
+            ->where('w_due_type', $this->type === 'previous' ? 'previous' : 'current');
         } elseif ($this->type === 'security') {
             $query = \App\Models\SecurityInvoice::query()
             ->when($this->date && $this->end_date, function (Builder $query) {
@@ -113,7 +115,7 @@ class WaterInvoiceReport extends Page implements HasTable, HasForms
 
     protected function getTableColumns(): array
     {
-        if ($this->type === 'water') {
+        if ($this->type === 'water' || $this->type === 'previous') {
             return [
                 TextColumn::make('invoice_number')->label('রশিদ নং')
                     ->formatStateUsing(fn (string $state): string => $this->en2bn($state)),
@@ -138,7 +140,8 @@ class WaterInvoiceReport extends Page implements HasTable, HasForms
                 TextColumn::make('s_total_amount')->label('মোট টাকা')->money('BDT', true),
             ];
         } else {
-            return [];
+            return [
+            ];
         }
     }
 
