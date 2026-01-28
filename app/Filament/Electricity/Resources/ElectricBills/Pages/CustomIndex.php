@@ -56,43 +56,57 @@ class CustomIndex extends Page implements HasTable, HasForms
                     ->options(ElectricArea::all()->pluck('name','id'))
                     ->reactive()
                     ->afterStateUpdated(fn()=>$this->resetTable()),
+                Select::make('year')
+                    ->label(__('fields.billing_year'))
+                    ->options(function () {
+                        $currentYear = date('Y');
+                        $years = [];
+                        for ($year = $currentYear; $year >= 2025; $year--) {
+                            $years[$year] = $year;
+                        }
+                        return $years;
+                    })
+                    ->required()
+                    ->reactive()
+                    ->visible(fn () => $this->area_id !== null),
                 Select::make('month')
                 ->label(__('fields.billing_month'))
-                ->options(function () {
+                ->options(function (callable $get) {
                     $months = [
-                        1 => 'January',
-                        2 => 'February',
-                        3 => 'March',
-                        4 => 'April',
-                        5 => 'May',
-                        6 => 'June',
-                        7 => 'July',
-                        8 => 'August',
-                        9 => 'September',
-                        10 => 'October',
-                        11 => 'November',
-                        12 => 'December',
+                        1 => 'জানুয়ারি',
+                        2 => 'ফেব্রুয়ারি',
+                        3 => 'মার্চ',
+                        4 => 'এপ্রিল',
+                        5 => 'মে',
+                        6 => 'জুন',
+                        7 => 'জুলাই',
+                        8 => 'আগস্ট',
+                        9 => 'সেপ্টেম্বর',
+                        10 => 'অক্টোবর',
+                        11 => 'নভেম্বর',
+                        12 => 'ডিসেম্বর',
                     ];
-                    $currentMonth = date('n'); // 1-12
-                    // Only include months up to last month
-                    return array_slice($months, 0, $currentMonth - 1, true);
+                    $selectedYear = $get('year');
+                        $now = now();
+
+                        // If no year selected → show all months
+                        if (! $selectedYear) {
+                            return $months;
+                        }
+
+                        // Current year → only past months
+                        if ((int) $selectedYear === $now->year) {
+                            return array_slice($months, 0, $now->month - 1, true);
+                        }
+
+                        // Past or future year → all months
+                        return $months;
                 })
                 ->reactive()
                 ->afterStateUpdated(fn ()=> $this->resetTable())
                 ->required()
                 ->visible(fn () => $this->area_id !== null),
-            Select::make('year')
-                ->label(__('fields.billing_year'))
-                ->options(function () {
-                    $currentYear = date('Y');
-                    $years = [];
-                    for ($year = $currentYear; $year >= 2000; $year--) {
-                        $years[$year] = $year;
-                    }
-                    return $years;
-                })
-                ->required()
-                ->visible(fn () => $this->area_id !== null),
+            
             ]),
         ];
     }

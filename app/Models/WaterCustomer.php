@@ -31,4 +31,13 @@ class WaterCustomer extends Model
     {
         return $this->hasMany(SecurityBill::class);
     }
+
+    public function waterInvoices():HasMany
+    {
+        return $this->hasMany(WaterInvoice::class);
+    }
+    public function securityInvoices():HasMany
+    {
+        return $this->hasMany(SecurityInvoice::class);
+    }
 }

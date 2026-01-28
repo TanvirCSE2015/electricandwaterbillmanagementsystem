@@ -6,15 +6,20 @@ use App\Models\WaterBill;
 use App\Services\WaterBillingService;
 use Carbon\Carbon;
 use Dom\Text;
+use Filament\Actions\Action;
+use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
+use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Schemas\Components\Grid;
+use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
 use Illuminate\Database\Eloquent\Builder;
+use PhpOffice\PhpSpreadsheet\Shared\Date;
 
 class WaterBillGenerate extends Page implements HasForms,HasTable
 {
@@ -114,9 +119,10 @@ class WaterBillGenerate extends Page implements HasForms,HasTable
             ->where('water_bill_month', $this->month)
             ->where('water_bill_year', $this->year)
             ->exists();
-
+            
         if (!$existing) {
-            $this->generateBills();
+            // $this->generateBills();
+             return WaterBill::query()->whereNull('id');
         }
 
         return WaterBill::query()
@@ -143,9 +149,73 @@ class WaterBillGenerate extends Page implements HasForms,HasTable
         ];
     }
 
-    protected function generateBills(): void
+    protected function getTableHeaderActions(): array
+    {
+        return[
+            Action::make('generate_bills')
+                ->label('বিল তৈরি করুন')
+                ->icon('heroicon-o-exclamation-triangle')
+                ->color('warning')
+                ->visible(function () {
+                    if (!$this->month || !$this->year) {
+                        return false;
+                    }
+
+                    return ! WaterBill::query()
+                        ->where('water_bill_month', $this->month)
+                        ->where('water_bill_year', $this->year)
+                        ->exists();
+                })
+                ->requiresConfirmation()
+                ->modalHeading('বিল তৈরি নিশ্চিত করুন')
+                ->modalDescription('এই মাসের জন্য এখনো কোনো বিল নেই। আপনি কি নতুন বিল তৈরি করতে চান?')
+                ->modalSubmitActionLabel('হ্যাঁ, তৈরি করুন')
+                ->schema([
+                    Grid::make(2)
+                    ->schema([
+                        DatePicker::make('creation_date')
+                        ->label('বিলের তৈরির তারিখ')
+                        ->native(false)
+                        ->closeOnDateSelection()
+                        ->displayFormat('Y-m-d')
+                        ->format('Y-m-d')
+                        ->default(Carbon::now())
+                        ->required(),
+                        DatePicker::make('last_date')
+                        ->label('বিল পরিশোধের তারিখ')
+                        ->native(false)
+                        ->closeOnDateSelection()
+                        ->displayFormat('Y-m-d')
+                        ->format('Y-m-d')
+                        ->default(Carbon::now())
+                        ->required(),
+                    ])
+                ])
+                ->action(function (array $data) {
+                        // dd($data['confirm_date']);
+                    $this->generateBills($data['creation_date'],$data['last_date']);
+
+                    Notification::make()
+                        ->title('বিল সফলভাবে তৈরি হয়েছে')
+                        ->success()
+                        ->send();
+
+                    $this->resetTable();
+                }),
+                Action::make('refresh')
+                ->label('রিফ্রেশ করুন')
+                ->icon(Heroicon::ReceiptRefund)
+                ->color('info')
+                ->action(function () {
+                    $this->resetTable();
+                }),
+        ];
+    }
+
+    protected function generateBills($creationDate, $lastBillDate): void
     {
         // Call the service method to generate bills
-        WaterBillingService::generateBulkBills($this->month, $this->year, auth()->id());
+
+        WaterBillingService::generateBulkBills($this->month, $this->year, auth()->id(), $creationDate, $lastBillDate);
     }
 }

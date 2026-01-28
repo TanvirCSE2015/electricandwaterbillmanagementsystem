@@ -163,11 +163,14 @@ class WaterBillHelper
         });
     }
 
-    public static function previousDueInvoice(int $customerId, int $userId, float $paidAmount)
+    public static function previousDueInvoice(int $customerId, int $userId, float $paidAmount, float $s_paidAmount)
     {
-        return DB::transaction(function () use ($customerId, $userId, $paidAmount) {
+        return DB::transaction(function () use ($customerId, $userId, $paidAmount, $s_paidAmount) {
             $previousDue = WaterCustomer::find($customerId);
             $dueTotal= $previousDue->previous_due - $paidAmount;
+            $s_dueTotal = $previousDue->s_previous_due - $s_paidAmount;
+            $invoice = null;
+            $s_invoice = null;
 
             if (!$previousDue) {
                 return ['status' => 'warning', 'message' => 'কোনো পূর্বের বকেয়া পাওয়া যায়নি।'];
@@ -175,26 +178,43 @@ class WaterBillHelper
 
             $invoiceNumber = 'INV-PD-' . now()->format('YmdHis') . '-' . $customerId;
 
-            // Create invoice
-            $invoice = WaterInvoice::create([
-                'water_customer_id' => $customerId,
-                'w_invoice_date' => now(),
-                'w_invoice_month' => now()->month,
-                'w_invoice_month_name' => now()->format('F'),
-                'w_invoice_year' => now()->year,
-                'w_from_month' => 'পূর্বের বকেয়া',
-                'w_to_month' => '',
-                'w_due_type' => 'previous',
-                'w_total_amount' => $paidAmount,
-                'w_created_by' => $userId,
-            ]);
+            if($paidAmount > 0){
+                // Create invoice
+                $invoice = WaterInvoice::create([
+                    'water_customer_id' => $customerId,
+                    'w_invoice_date' => now(),
+                    'w_invoice_month' => now()->month,
+                    'w_invoice_month_name' => now()->format('F'),
+                    'w_invoice_year' => now()->year,
+                    'w_from_month' => 'পূর্বের বকেয়া',
+                    'w_to_month' => '',
+                    'w_due_type' => 'previous',
+                    'w_total_amount' => $paidAmount,
+                    'w_created_by' => $userId,
+                ]);
+            }
+            if($s_paidAmount > 0){
+                // Create invoice
+                $s_invoice = SecurityInvoice::create([
+                    'water_customer_id' => $customerId,
+                    's_invoice_date' => now(),
+                    's_invoice_month' => now()->month,
+                    's_invoice_month_name' => now()->format('F'),
+                    's_invoice_year' => now()->year,
+                    's_from_month' => 'পূর্বের বকেয়া',
+                    's_to_month' => '',
+                    's_total_amount' => $s_paidAmount,
+                    's_created_by' => $userId,
+                ]);
+            }
 
             // Update paid status
            
             $previousDue->previous_due = $dueTotal;
+            $previousDue->s_previous_due = $s_dueTotal;
             $previousDue->save();
 
-            return redirect()->route('water-receipt.print',['id'=>$invoice->id,'type'=>'previous']);
+            return redirect()->route('water-receipt.print',['id'=>$invoice->id ?? null,'s_id'=>$s_invoice->id ?? null,'type'=>'previous']);
         });
     }
 }

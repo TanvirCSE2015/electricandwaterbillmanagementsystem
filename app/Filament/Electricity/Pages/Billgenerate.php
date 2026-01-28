@@ -23,6 +23,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\TextInputColumn;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
+use Filament\Notifications\Notification;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 
@@ -68,44 +69,56 @@ class Billgenerate extends Page implements HasForms, HasTable
                         $set('month', null);
                         $this->resetTable();
                     }),
-                Select::make('month')
-                    ->label(__('fields.billing_month'))
-                    ->options(function () {
-                        $months = [
-                            1 => 'January',
-                            2 => 'February',
-                            3 => 'March',
-                            4 => 'April',
-                            5 => 'May',
-                            6 => 'June',
-                            7 => 'July',
-                            8 => 'August',
-                            9 => 'September',
-                            10 => 'October',
-                            11 => 'November',
-                            12 => 'December',
-                        ];
-                        $currentMonth = date('n'); // 1-12
-                        // Only include months up to last month
-                        return array_slice($months, 0, $currentMonth - 1, true);
-                    })
-                    ->reactive()
-                    ->visible(fn () => $this->area_id !== null)
-                    ->afterStateUpdated(fn () => $this->resetTable()),
-
                 Select::make('year')
                     ->label(__('fields.billing_year'))
                     ->options(function () {
                         $current = date('Y');
                         $years = [];
-                        for ($i = $current; $i >= 2023; $i--) {
+                        for ($i = $current; $i >= 2025; $i--) {
                             $years[$i] = $i;
                         }
                         return $years;
                     })
                     ->reactive()
+                    ->visible(fn () => $this->area_id !== null),
+                Select::make('month')
+                    ->label(__('fields.billing_month'))
+                    ->options(function (callable $get) {
+                        $months = [
+                            1 => 'জানুয়ারি',
+                            2 => 'ফেব্রুয়ারি',
+                            3 => 'মার্চ',
+                            4 => 'এপ্রিল',
+                            5 => 'মে',
+                            6 => 'জুন',
+                            7 => 'জুলাই',
+                            8 => 'আগস্ট',
+                            9 => 'সেপ্টেম্বর',
+                            10 => 'অক্টোবর',
+                            11 => 'নভেম্বর',
+                            12 => 'ডিসেম্বর',
+                        ];
+                        $selectedYear = $get('year');
+                        $now = now();
+
+                        // If no year selected → show all months
+                        if (! $selectedYear) {
+                            return $months;
+                        }
+
+                        // Current year → only past months
+                        if ((int) $selectedYear === $now->year) {
+                            return array_slice($months, 0, $now->month - 1, true);
+                        }
+
+                        // Past or future year → all months
+                        return $months;
+                    })
+                    ->reactive()
                     ->visible(fn () => $this->area_id !== null)
                     ->afterStateUpdated(fn () => $this->resetTable()),
+
+                
             ]),
         ];
     }
@@ -125,7 +138,8 @@ class Billgenerate extends Page implements HasForms, HasTable
             ->exists();
 
         if (!$existing) {
-            $this->generateBills();
+            // CanRequireConfirmation::requireConfirmation(true);
+           return ElectricBill::query()->whereNull('id');
         }
 
         return ElectricBill::query()
@@ -147,7 +161,7 @@ class Billgenerate extends Page implements HasForms, HasTable
             })
             ->where('status', 'active')->get();
             $previousReading=0;
-
+           
             foreach ($activeMeters as $meter) {
                 // Find last reading
                 $lastReading = MeterReading::where('meter_id', $meter->id)
@@ -168,7 +182,7 @@ class Billgenerate extends Page implements HasForms, HasTable
                     'current_reading' => 0,
                     'consume_unit' => 0,
                 ]);
-                ElectricBillingService::generateBill($reading, $setting, auth()->id(),$this->month);
+                ElectricBillingService::generateBill($reading, $setting, auth()->id(),$this->month,$this->year);
             }
         });
     }
@@ -213,6 +227,38 @@ class Billgenerate extends Page implements HasForms, HasTable
     protected function getTableHeaderActions(): array
     {
         return [
+
+            Action::make('generate_bills')
+                ->label('বিল তৈরি করুন')
+                ->icon('heroicon-o-exclamation-triangle')
+                ->color('warning')
+                ->visible(function () {
+                    if (!$this->area_id || !$this->month || !$this->year) {
+                        return false;
+                    }
+
+                    return ! ElectricBill::query()
+                        ->whereHas('customer', fn ($q) =>
+                            $q->where('electric_area_id', $this->area_id)
+                        )
+                        ->where('billing_month', $this->month)
+                        ->where('billing_year', $this->year)
+                        ->exists();
+                })
+                ->requiresConfirmation()
+                ->modalHeading('বিল তৈরি নিশ্চিত করুন')
+                ->modalDescription('এই মাসের জন্য এখনো কোনো বিল নেই। আপনি কি নতুন বিল তৈরি করতে চান?')
+                ->modalSubmitActionLabel('হ্যাঁ, তৈরি করুন')
+                ->action(function () {
+                    $this->generateBills();
+
+                    Notification::make()
+                        ->title('বিল সফলভাবে তৈরি হয়েছে')
+                        ->success()
+                        ->send();
+
+                    $this->resetTable();
+                }),
             Action::make('complete_bills')
                 ->label('পূর্ণাঙ্গ বিল তৈরি করুন')
                 ->icon('heroicon-o-check')

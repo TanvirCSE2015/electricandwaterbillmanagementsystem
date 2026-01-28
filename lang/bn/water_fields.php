@@ -11,7 +11,7 @@ return [
     'holding_number'=>'হোল্ডিং নাম্বার',
     'flat_number'=>'ফ্ল্যাট নাম্বার',
     'total_flat'=>'সর্বমোট ফ্ল্যাট',
-    'previous_due'=>'পূর্বের বকেয়া',
+    'previous_due'=>'পানির পূর্বের বকেয়া',
     'type'=>'বিল্ডিং এর ধরণ',
     'water_bill_month'=>'বিল মাস',
     'water_bill_year'=>'বিল বছর',
@@ -31,4 +31,5 @@ return [
     'total_security_flat'=>'সিকিউরিটি ফ্ল্যাট সংখ্যা',
     's_cons_amount'=>'নির্মাণাধীন সিকিউরিটি',
     'cons_amount'=>'নির্মাণাধীন পরিমাণ',
+    's_previous_due'=>'নিরাপত্তার পূর্বের বকেয়া',
 ];

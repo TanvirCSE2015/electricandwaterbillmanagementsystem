@@ -12,7 +12,7 @@ use Illuminate\Support\Carbon;
 class ElectricBillingService
 {
 
-    public static function generateBill(MeterReading $reading, ElectricBillSetting $setting, int $userId, int $month): ElectricBill
+    public static function generateBill(MeterReading $reading, ElectricBillSetting $setting, int $userId, int $month, int $year): ElectricBill
     {
         $consumedUnits = $reading->consume_unit;
         $total_unit=$consumedUnits + $setting->system_loss;
@@ -34,7 +34,7 @@ class ElectricBillingService
             'electric_bill_setting_id' => $setting->id,
             'bill_date'                => Carbon::now(),
             'billing_month'            => $month,
-            'billing_year'             => $reading->reading_date->year,
+            'billing_year'             => $year,
             'bill_month_name'          =>  DateTime::createFromFormat('!m', $month)->format('F'),
             'consumed_units'           => $consumedUnits,
             'system_loss_units'        => $setting->system_loss,
@@ -68,7 +68,7 @@ class ElectricBillingService
 
         if (! $bill) {
             // If bill does not exist yet, create one instead
-            return self::generateBill($reading, $setting, $userId, $reading->reading_date->month);
+            // return self::generateBill($reading, $setting, $userId, $reading->reading_date->month);
         }
        
         $consumedUnits    = $reading->consume_unit < 0 ? 0 : $reading->consume_unit;
