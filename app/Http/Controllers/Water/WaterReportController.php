@@ -13,7 +13,7 @@ class WaterReportController extends Controller
         $endDate=$request->query('end_date');
         $type=$request->query('type');
         $records='';
-        if($type=='water' || $type=='previous'){
+        if($type=='water' || $type=='w_previous'){
             $records=\App\Models\WaterInvoice::query()
             ->when($date && $endDate, function ($query) use ($date, $endDate) {
                 $query->whereBetween('w_invoice_date', [$date, $endDate]);
@@ -21,8 +21,8 @@ class WaterReportController extends Controller
             ->when($date && ! $endDate, function ($query) use ($date) {
                 $query->whereDate('w_invoice_date', '=', $date);
             })
-            ->where('w_due_type', $type === 'previous' ? 'previous' : 'current')->get();
-        }elseif($type=='security'){
+            ->where('w_due_type', $type === 'w_previous' ? 'previous' : 'current')->get();
+        }elseif($type=='security' || $type=='s_previous'){
             $records=\App\Models\SecurityInvoice::query()->
             when($date && $endDate, function ($query) use ($date, $endDate) {
                 $query->whereBetween('s_invoice_date', [$date, $endDate]);
@@ -30,8 +30,9 @@ class WaterReportController extends Controller
             ->when($date && ! $endDate, function ($query) use ($date) {
                 $query->whereDate('s_invoice_date', '=', $date);
             })
-            ->get();
+            ->where('due_type', $type == 's_previous' ? 'pre_due' : 'current')->get();
         }
+        // dd($records);
         return view('water.reports.print_water_invoice_report',compact('records','type','date','endDate'));
     }
 

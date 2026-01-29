@@ -74,7 +74,8 @@ class WaterInvoiceReport extends Page implements HasTable, HasForms
                         ->options([
                             'water' => 'পানি বিল',
                             'security' => 'নিরাপত্তা বিল',
-                            'previous' => 'পূর্বের বকেয়া বিল',
+                            'w_previous' => 'পূর্বের বকেয়া বিল (পানি)',
+                            's_previous' => 'পূর্বের বকেয়া বিল (নিরাপত্তা)',
                         ])
                         ->reactive()
                         ->afterStateUpdated(fn () => $this->resetTable()),
@@ -84,7 +85,7 @@ class WaterInvoiceReport extends Page implements HasTable, HasForms
     protected function getTableQuery()
     {
         $query = null;
-        if ($this->type === 'water' || $this->type === 'previous') {
+        if ($this->type === 'water' || $this->type === 'w_previous') {
             $query = \App\Models\WaterInvoice::query()
             ->when($this->date && $this->end_date, function (Builder $query) {
                 $query->whereBetween('w_invoice_date', [
@@ -95,8 +96,8 @@ class WaterInvoiceReport extends Page implements HasTable, HasForms
             ->when($this->date && ! $this->end_date, function (Builder $query) {
                 $query->whereDate('w_invoice_date', '=', $this->date->toDateString());
             })
-            ->where('w_due_type', $this->type === 'previous' ? 'previous' : 'current');
-        } elseif ($this->type === 'security') {
+            ->where('w_due_type', $this->type === 'w_previous' ? 'previous' : 'current');
+        } elseif ($this->type === 'security' || $this->type === 's_previous') {
             $query = \App\Models\SecurityInvoice::query()
             ->when($this->date && $this->end_date, function (Builder $query) {
                 $query->whereBetween('s_invoice_date', [
@@ -106,7 +107,8 @@ class WaterInvoiceReport extends Page implements HasTable, HasForms
             })
             ->when($this->date && ! $this->end_date, function (Builder $query) {
                 $query->whereDate('s_invoice_date', '=', $this->date->toDateString());
-            });
+            })
+            ->where('due_type', $this->type === 's_previous' ? 'pre_due' : 'current');
         } else {
             return null; // or handle invalid type as needed
         }
@@ -115,7 +117,7 @@ class WaterInvoiceReport extends Page implements HasTable, HasForms
 
     protected function getTableColumns(): array
     {
-        if ($this->type === 'water' || $this->type === 'previous') {
+        if ($this->type === 'water' || $this->type === 'w_previous') {
             return [
                 TextColumn::make('invoice_number')->label('রশিদ নং')
                     ->formatStateUsing(fn (string $state): string => $this->en2bn($state)),
@@ -127,7 +129,7 @@ class WaterInvoiceReport extends Page implements HasTable, HasForms
                     ->formatStateUsing(fn (string $state): string => $this->en2bn(date('d-m-Y', strtotime($state)))),
                 TextColumn::make('w_total_amount')->label('মোট টাকা')->money('BDT', true),
             ];
-        } elseif ($this->type === 'security') {
+        } elseif ($this->type === 'security' || $this->type === 's_previous') {
             return [
                 TextColumn::make('s_invoice_number')->label('রশিদ নং')
                     ->formatStateUsing(fn (string $state): string => $this->en2bn($state)),

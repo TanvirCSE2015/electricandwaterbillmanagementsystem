@@ -203,6 +203,7 @@ class WaterBillHelper
                     's_invoice_year' => now()->year,
                     's_from_month' => 'পূর্বের বকেয়া',
                     's_to_month' => '',
+                    'due_type' => 'pre_due',
                     's_total_amount' => $s_paidAmount,
                     's_created_by' => $userId,
                 ]);
